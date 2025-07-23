@@ -12,6 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
 <body class="bg-gray-100">
@@ -96,8 +98,11 @@
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
             
-            const handleLogin = () => {
+            const handleLogin = async () => {
                 if (password === 'admin123') {
+                    // Start audio context on user interaction
+                    await Tone.start();
+                    console.log("Audio context started on login.");
                     onLogin();
                 } else {
                     setError('Kata sandi salah.');
@@ -131,6 +136,51 @@
             const [callingRooms, setCallingRooms] = useState([]);
             const [unreadChatRooms, setUnreadChatRooms] = useState(new Set());
             const [newOrdersCount, setNewOrdersCount] = useState(0);
+            
+            const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+            const alarmSynth = useRef(null);
+            const chatSynth = useRef(null);
+            const alarmLoop = useRef(null);
+            const prevUnreadCount = useRef(0);
+
+            // Initialize sound synths and loop
+            useEffect(() => {
+                alarmSynth.current = new Tone.Synth({ oscillator: { type: "square" } }).toDestination();
+                chatSynth.current = new Tone.Synth().toDestination();
+                alarmLoop.current = new Tone.Loop(time => {
+                    alarmSynth.current.triggerAttackRelease("A5", "16n", time);
+                }, "4n");
+                
+                return () => {
+                    if (Tone.Transport.state === 'started') {
+                        Tone.Transport.stop();
+                    }
+                    alarmLoop.current?.dispose();
+                };
+            }, []);
+
+            // Effect for handling the continuous alarm sound
+            useEffect(() => {
+                if (callingRooms.length > 0 && !isAlarmPlaying) {
+                    alarmLoop.current.start(0);
+                    Tone.Transport.start();
+                    setIsAlarmPlaying(true);
+                } else if (callingRooms.length === 0 && isAlarmPlaying) {
+                    Tone.Transport.stop();
+                    alarmLoop.current.stop();
+                    setIsAlarmPlaying(false);
+                }
+            }, [callingRooms, isAlarmPlaying]);
+
+            // Effect for handling new chat message sound
+            useEffect(() => {
+                if (unreadChatRooms.size > prevUnreadCount.current) {
+                    if (chatSynth.current) {
+                        chatSynth.current.triggerAttackRelease("G5", "8n");
+                    }
+                }
+                prevUnreadCount.current = unreadChatRooms.size;
+            }, [unreadChatRooms]);
 
             useEffect(() => {
                 if (!db) return;
@@ -142,7 +192,7 @@
                 });
 
                 const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`);
-                const qChats = chatsRef.where("sender", "!=", "Admin").where("isReadByAdmin", "==", false);
+                const qChats = chatsRef.where("isReadByAdmin", "==", false);
                 const unsubChats = qChats.onSnapshot(snapshot => {
                     const roomsWithUnreadMessages = new Set(snapshot.docs.map(doc => doc.data().roomNumber));
                     setUnreadChatRooms(roomsWithUnreadMessages);
@@ -169,7 +219,7 @@
                     snapshot.docs.forEach(doc => {
                         batch.update(doc.ref, { isReadByAdmin: true });
                     });
-                    batch.commit();
+                    batch.commit().catch(err => console.error("Error marking chat as read:", err));
                 });
             };
 
@@ -599,6 +649,7 @@
             const [selectedRoom, setSelectedRoom] = useState(null);
             const [newMessage, setNewMessage] = useState('');
             const messagesEndRef = useRef(null);
+            const [showClearModal, setShowClearModal] = useState(false);
 
             useEffect(() => {
                 if (!db) return;
@@ -636,6 +687,17 @@
                 });
                 setNewMessage('');
             };
+            
+            const handleClearChat = async () => {
+                if (!selectedRoom) return;
+                const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`);
+                const q = chatsRef.where("roomNumber", "==", selectedRoom);
+                const snapshot = await q.get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                setShowClearModal(false);
+            };
 
             return (
                 <div className="flex h-[80vh] bg-white rounded-lg shadow-md">
@@ -655,7 +717,10 @@
                     <div className="w-2/3 flex flex-col">
                         {selectedRoom ? (
                             <>
-                                <div className="p-4 border-b font-bold text-lg">Chat dengan Kamar {selectedRoom}</div>
+                                <div className="p-4 border-b flex justify-between items-center">
+                                    <span className="font-bold text-lg">Chat dengan Kamar {selectedRoom}</span>
+                                    <button onClick={() => setShowClearModal(true)} className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Bersihkan Chat</button>
+                                </div>
                                 <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
                                     {groupedMessages[selectedRoom]?.map(msg => (
                                         <div key={msg.id} className={`flex mb-3 ${msg.sender === 'Admin' ? 'justify-end' : 'justify-start'}`}>
@@ -683,6 +748,12 @@
                             <div className="flex-grow flex items-center justify-center text-gray-500">Pilih kamar untuk melihat percakapan.</div>
                         )}
                     </div>
+                    <ConfirmationModal
+                        show={showClearModal}
+                        message={`Anda yakin ingin menghapus semua chat dari Kamar ${selectedRoom}?`}
+                        onConfirm={handleClearChat}
+                        onCancel={() => setShowClearModal(false)}
+                    />
                 </div>
             );
         }
