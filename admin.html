@@ -176,7 +176,9 @@
             useEffect(() => {
                 if (unreadChatRooms.size > prevUnreadCount.current) {
                     if (chatSynth.current) {
-                        chatSynth.current.triggerAttackRelease("G5", "8n");
+                        const now = Tone.now();
+                        chatSynth.current.triggerAttackRelease("C5", "8n", now);
+                        chatSynth.current.triggerAttackRelease("G5", "8n", now + 0.2);
                     }
                 }
                 prevUnreadCount.current = unreadChatRooms.size;
@@ -194,7 +196,7 @@
                 const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`);
                 const qChats = chatsRef.where("isReadByAdmin", "==", false);
                 const unsubChats = qChats.onSnapshot(snapshot => {
-                    const roomsWithUnreadMessages = new Set(snapshot.docs.map(doc => doc.data().roomNumber));
+                    const roomsWithUnreadMessages = new Set(snapshot.docs.filter(doc => doc.data().sender !== 'Admin').map(doc => doc.data().roomNumber));
                     setUnreadChatRooms(roomsWithUnreadMessages);
                 });
 
