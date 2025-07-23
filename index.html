@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kabin - Sistem Pemesanan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/javascript">
+        // --- KONFIGURASI FIREBASE ANDA SUDAH DIMASUKKAN ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVvdwyTXNZC0cFrwrLI2oq47uvbbtTtzw",
+            authDomain: "project-moksha-a59af.firebaseapp.com",
+            projectId: "project-moksha-a59af",
+            storageBucket: "project-moksha-a59af.firebasestorage.app",
+            messagingSenderId: "565916093642",
+            appId: "1:565916093642:web:9f3e6b03b1790e8b793833",
+            measurementId: "G-LBL8336HC6"
+        };
+        // ----------------------------------------------------
+        window.__firebase_config = JSON.stringify(firebaseConfig);
+        window.__app_id = firebaseConfig.appId;
+        window.__initial_auth_token = null; 
+    </script>
+
+    <script type="text/babel">
+        const { initializeApp } = firebase;
+        const { onAuthStateChanged } = firebase.auth;
+        const { useState, useEffect, createContext, useContext, useRef } = React;
+
+        const AppContext = createContext();
+
+        function App() {
+            const [loggedInRoom, setLoggedInRoom] = useState(null);
+            const [db, setDb] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
+            useEffect(() => {
+                try {
+                    const config = JSON.parse(window.__firebase_config);
+                    if (!config || config.apiKey === "YOUR_API_KEY") {
+                        setError("Konfigurasi Firebase belum diatur. Harap hubungi admin.");
+                        setLoading(false);
+                        return;
+                    }
+                    const app = initializeApp(config);
+                    setDb(firebase.firestore(app));
+                    const auth = firebase.auth(app);
+                    auth.signInAnonymously().catch(err => console.error("Gagal login anonim:", err));
+                    setLoading(false);
+                } catch (e) {
+                    console.error("Error inisialisasi Firebase:", e);
+                    setError("Gagal memuat Firebase. Periksa konsol untuk detail.");
+                    setLoading(false);
+                }
+            }, []);
+
+            if (loading) return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
+            if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-100 text-red-700">{error}</div>;
+
+            return (
+                <AppContext.Provider value={{ db, appId: window.__app_id, loggedInRoom }}>
+                    {loggedInRoom ? <RoomDashboard room={loggedInRoom} onLogout={() => setLoggedInRoom(null)} /> : <RoomLogin onLogin={setLoggedInRoom} />}
+                </AppContext.Provider>
+            );
+        }
+        
+        function RoomLogin({ onLogin }) {
+            const { db, appId } = useContext(AppContext);
+            const [roomName, setRoomName] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleLogin = async () => {
+                if (!roomName.trim()) return setError("Nama kamar tidak boleh kosong.");
+                setLoading(true);
+                setError('');
+                const roomsRef = db.collection(`artifacts/${appId}/public/data/rooms`);
+                const q = roomsRef.where("name", "==", roomName.trim().toUpperCase());
+                try {
+                    const snapshot = await q.get();
+                    if (snapshot.empty) {
+                        setError("Kamar tidak ditemukan.");
+                    } else {
+                        const roomDoc = snapshot.docs[0];
+                        onLogin({ id: roomDoc.id, ...roomDoc.data() });
+                    }
+                } catch(e) {
+                    console.error("Error logging in:", e);
+                    setError("Gagal menghubungi server.");
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 to-teal-500">
+                    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                        <h2 className="text-4xl font-bold text-gray-800 mb-2">Selamat Datang!</h2>
+                        <p className="text-gray-600 mb-6">Silakan masukkan nama kamar Anda.</p>
+                        {error && <p className="text-red-500 mb-4">{error}</p>}
+                        <input
+                            type="text"
+                            placeholder="Contoh: KAMAR 1"
+                            value={roomName}
+                            onChange={(e) => setRoomName(e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-lg"
+                        />
+                        <button onClick={handleLogin} disabled={loading} className="mt-6 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50">
+                            {loading ? 'Memeriksa...' : 'Masuk'}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        function RoomDashboard({ room, onLogout }) {
+            const [greeting, setGreeting] = useState('');
+            const [isCalling, setIsCalling] = useState(room.isCalling || false);
+            const { db, appId } = useContext(AppContext);
+            const [activeTab, setActiveTab] = useState('pesan');
+
+            useEffect(() => {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) setGreeting('Selamat Pagi');
+                else if (hour >= 12 && hour < 18) setGreeting('Selamat Siang');
+                else setGreeting('Selamat Malam');
+            }, []);
+
+            useEffect(() => {
+                const roomRef = db.doc(`artifacts/${appId}/public/data/rooms/${room.id}`);
+                const unsubscribe = roomRef.onSnapshot((doc) => {
+                    setIsCalling(doc.data()?.isCalling || false);
+                });
+                return () => unsubscribe();
+            }, [db, room.id, appId]);
+
+            const handleCallStaff = async () => {
+                if (isCalling) return;
+                const roomRef = db.doc(`artifacts/${appId}/public/data/rooms/${room.id}`);
+                await roomRef.update({ isCalling: true });
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white shadow-md p-4 sticky top-0 z-10">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-800">{greeting}, {room.displayName || room.name}!</h1>
+                                <p className="text-gray-600">Welcome aboard.</p>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={handleCallStaff}
+                                    disabled={isCalling}
+                                    className={`px-6 py-2 font-semibold rounded-lg transition-colors ${isCalling ? 'bg-yellow-400 text-yellow-800 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                                >
+                                    {isCalling ? 'Staf Sedang Dipanggil...' : 'Panggil Staf'}
+                                </button>
+                                <button onClick={onLogout} className="text-gray-500 hover:text-gray-800">Logout</button>
+                            </div>
+                        </div>
+                    </header>
+                    <nav className="bg-blue-800 shadow-sm p-3 flex justify-around rounded-b-xl sticky top-[88px] z-10">
+                        <button onClick={() => setActiveTab('pesan')} className={`px-6 py-3 rounded-lg text-lg font-medium transition duration-200 ${activeTab === 'pesan' ? 'bg-teal-500 text-white shadow-md' : 'text-blue-100 hover:bg-blue-700'}`}>Pesan Menu</button>
+                        <button onClick={() => setActiveTab('riwayat')} className={`px-6 py-3 rounded-lg text-lg font-medium transition duration-200 ${activeTab === 'riwayat' ? 'bg-teal-500 text-white shadow-md' : 'text-blue-100 hover:bg-blue-700'}`}>Riwayat Pesanan</button>
+                        <button onClick={() => setActiveTab('chat')} className={`px-6 py-3 rounded-lg text-lg font-medium transition duration-200 ${activeTab === 'chat' ? 'bg-teal-500 text-white shadow-md' : 'text-blue-100 hover:bg-blue-700'}`}>Chat Admin</button>
+                    </nav>
+                    <main className="p-6">
+                        {activeTab === 'pesan' && <OrderItems />}
+                        {activeTab === 'riwayat' && <OrderHistory />}
+                        {activeTab === 'chat' && <RoomChat />}
+                    </main>
+                </div>
+            );
+        }
+
+        function OrderItems() {
+            const { db, appId, loggedInRoom } = useContext(AppContext);
+            const [items, setItems] = useState([]);
+            const [cart, setCart] = useState([]);
+            const [itemAddOnSelections, setItemAddOnSelections] = useState({});
+            const [showCartModal, setShowCartModal] = useState(false);
+            const categories = ['Makanan', 'Minuman', 'Dessert', 'Alcohol', 'Lain-lain'];
+
+            useEffect(() => {
+                const itemsRef = db.collection(`artifacts/${appId}/public/data/items`).orderBy('name');
+                const unsubscribe = itemsRef.onSnapshot(snapshot => {
+                    setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                });
+                return () => unsubscribe();
+            }, [db, appId]);
+
+            const groupedItems = items.reduce((acc, item) => {
+                const category = item.category || 'Lain-lain';
+                (acc[category] = acc[category] || []).push(item);
+                return acc;
+            }, {});
+
+            const toggleAddOn = (itemId, addOn) => {
+                setItemAddOnSelections(prev => {
+                    const currentSelections = prev[itemId] || [];
+                    const isSelected = currentSelections.some(a => a.name === addOn.name);
+                    const newSelections = isSelected ? currentSelections.filter(a => a.name !== addOn.name) : [...currentSelections, addOn];
+                    return { ...prev, [itemId]: newSelections };
+                });
+            };
+
+            const addToCart = (item) => {
+                const selectedAddOns = itemAddOnSelections[item.id] || [];
+                const cartItem = {
+                    ...item,
+                    cartId: Date.now(), // Unique ID for this cart entry
+                    selectedAddOns
+                };
+                setCart(prev => [...prev, cartItem]);
+                alert(`${item.name} ditambahkan ke keranjang!`);
+            };
+            
+            const placeOrder = async () => {
+                if (cart.length === 0) return;
+                const total = cart.reduce((sum, item) => sum + item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
+                
+                await db.collection(`artifacts/${appId}/public/data/orders`).add({
+                    roomNumber: loggedInRoom.name,
+                    items: cart,
+                    total: total,
+                    status: 'Baru',
+                    timestamp: new Date()
+                });
+                setCart([]);
+                setShowCartModal(false);
+                alert("Pesanan berhasil dibuat!");
+            };
+
+            return (
+                <div className="relative">
+                    {categories.map(category => (
+                        (groupedItems[category] && groupedItems[category].length > 0) && (
+                            <div key={category} className="mb-8">
+                                <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-600 pb-2">{category}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {groupedItems[category].map(item => (
+                                        <div key={item.id} className="bg-white border rounded-lg p-4 flex flex-col justify-between shadow-sm">
+                                            <div>
+                                                <h4 className="text-xl font-semibold">{item.name}</h4>
+                                                <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                                                <p className={`font-bold text-lg ${item.price === 0 ? 'text-green-600' : 'text-blue-600'}`}>{item.price === 0 ? 'Gratis' : `Rp${item.price.toLocaleString('id-ID')}`}</p>
+                                                {item.addOns && item.addOns.length > 0 && (
+                                                    <div className="mt-3 border-t pt-3">
+                                                        <p className="font-semibold text-sm mb-2">Pilih Add-ons:</p>
+                                                        {item.addOns.map(addOn => (
+                                                            <label key={addOn.name} className="flex items-center text-sm">
+                                                                <input type="checkbox" onChange={() => toggleAddOn(item.id, addOn)} className="form-checkbox h-4 w-4 text-blue-600"/>
+                                                                <span className="ml-2">{addOn.name} (+Rp{addOn.price.toLocaleString('id-ID')})</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button onClick={() => addToCart(item)} className="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Tambah ke Keranjang</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    ))}
+                    {cart.length > 0 && (
+                        <div className="fixed bottom-6 right-6">
+                            <button onClick={() => setShowCartModal(true)} className="bg-teal-500 text-white rounded-full p-4 shadow-lg flex items-center">
+                                <span className="mr-2">{cart.length} item di Keranjang</span>
+                                <span>🛒</span>
+                            </button>
+                        </div>
+                    )}
+                    {showCartModal && (
+                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+                                <h3 className="text-2xl font-bold mb-4">Keranjang Anda</h3>
+                                <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                                    {cart.map(item => (
+                                        <div key={item.cartId} className="flex justify-between items-center border-b pb-2">
+                                            <div>
+                                                <p className="font-semibold">{item.name}</p>
+                                                {item.selectedAddOns.length > 0 && (
+                                                    <ul className="text-xs text-gray-500 list-disc list-inside ml-2">
+                                                        {item.selectedAddOns.map(ao => <li key={ao.name}>{ao.name}</li>)}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                            <p>Rp{(item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString('id-ID')}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between font-bold text-xl mt-4">
+                                    <p>Total:</p>
+                                    <p>Rp{cart.reduce((sum, item) => sum + item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0), 0).toLocaleString('id-ID')}</p>
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-2">
+                                    <button onClick={() => setShowCartModal(false)} className="bg-gray-300 px-4 py-2 rounded">Tutup</button>
+                                    <button onClick={placeOrder} className="bg-green-600 text-white px-4 py-2 rounded">Buat Pesanan</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function OrderHistory() {
+            const { db, appId, loggedInRoom } = useContext(AppContext);
+            const [orders, setOrders] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                if (!db || !loggedInRoom) return;
+                const ordersRef = db.collection(`artifacts/${appId}/public/data/orders`).where('roomNumber', '==', loggedInRoom.name);
+                const unsubscribe = ordersRef.onSnapshot(snapshot => {
+                    const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    fetchedOrders.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+                    setOrders(fetchedOrders);
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, [db, appId, loggedInRoom]);
+
+            if (loading) return <p>Memuat riwayat...</p>;
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Riwayat Pesanan Anda</h2>
+                    {orders.length === 0 ? (<p>Anda belum pernah memesan.</p>) : (
+                        <div className="space-y-4">
+                            {orders.map(order => (
+                                <div key={order.id} className="border rounded-lg p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-sm text-gray-500">Pesanan pada {new Date(order.timestamp.toDate()).toLocaleString()}</p>
+                                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${order.status === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{order.status}</span>
+                                    </div>
+                                    <ul className="list-disc list-inside ml-4 mb-2">
+                                        {order.items.map(item => (
+                                            <li key={item.cartId}>{item.name}</li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-right font-bold text-lg">Total: Rp{order.total.toLocaleString('id-ID')}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function RoomChat() {
+            const { db, appId, loggedInRoom } = useContext(AppContext);
+            const [messages, setMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState('');
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => {
+                if (!db || !loggedInRoom) return;
+                const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`).where('roomNumber', '==', loggedInRoom.name);
+                const unsubscribe = chatsRef.onSnapshot(snapshot => {
+                    const fetchedMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    fetchedMessages.sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
+                    setMessages(fetchedMessages);
+                });
+                return () => unsubscribe();
+            }, [db, appId, loggedInRoom]);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            const handleSendMessage = async () => {
+                if (!newMessage.trim()) return;
+                await db.collection(`artifacts/${appId}/public/data/chats`).add({
+                    roomNumber: loggedInRoom.name,
+                    sender: loggedInRoom.name,
+                    message: newMessage.trim(),
+                    timestamp: new Date()
+                });
+                setNewMessage('');
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[70vh]">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Chat dengan Admin</h2>
+                    <div className="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`flex mb-3 ${msg.sender === 'Admin' ? 'justify-start' : 'justify-end'}`}>
+                                <div className={`p-3 rounded-lg max-w-[70%] ${msg.sender === 'Admin' ? 'bg-gray-300 text-gray-800' : 'bg-blue-500 text-white'}`}>
+                                    <p className="font-bold">{msg.sender === 'Admin' ? 'Admin' : 'Anda'}</p>
+                                    <p>{msg.message}</p>
+                                    <span className="text-xs opacity-75 mt-1 block">{new Date(msg.timestamp.toDate()).toLocaleTimeString()}</span>
+                                </div>
+                            </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                    </div>
+                    <div className="flex">
+                        <input 
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                            className="flex-grow p-3 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ketik pesan Anda..."
+                        />
+                        <button onClick={handleSendMessage} className="bg-blue-600 text-white px-6 rounded-r-md hover:bg-blue-700">Kirim</button>
+                    </div>
+                </div>
+            );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
