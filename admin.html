@@ -100,9 +100,10 @@
             
             const handleLogin = async () => {
                 if (password === 'admin123') {
-                    // Start audio context on user interaction
-                    await Tone.start();
-                    console.log("Audio context started on login.");
+                    if (Tone.context.state !== 'running') {
+                        await Tone.start();
+                        console.log("Audio context started on login.");
+                    }
                     onLogin();
                 } else {
                     setError('Kata sandi salah.');
@@ -143,7 +144,6 @@
             const alarmLoop = useRef(null);
             const prevUnreadCount = useRef(0);
 
-            // Initialize sound synths and loop
             useEffect(() => {
                 alarmSynth.current = new Tone.Synth({ oscillator: { type: "square" } }).toDestination();
                 chatSynth.current = new Tone.Synth().toDestination();
@@ -159,7 +159,6 @@
                 };
             }, []);
 
-            // Effect for handling the continuous alarm sound
             useEffect(() => {
                 if (callingRooms.length > 0 && !isAlarmPlaying) {
                     alarmLoop.current.start(0);
@@ -172,10 +171,9 @@
                 }
             }, [callingRooms, isAlarmPlaying]);
 
-            // Effect for handling new chat message sound
             useEffect(() => {
                 if (unreadChatRooms.size > prevUnreadCount.current) {
-                    if (chatSynth.current) {
+                    if (chatSynth.current && Tone.context.state === 'running') {
                         const now = Tone.now();
                         chatSynth.current.triggerAttackRelease("C5", "8n", now);
                         chatSynth.current.triggerAttackRelease("G5", "8n", now + 0.2);
@@ -215,11 +213,13 @@
 
             const handleReadChat = (roomNumber) => {
                 const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`);
-                const q = chatsRef.where("roomNumber", "==", roomNumber).where("sender", "!=", "Admin");
+                const q = chatsRef.where("roomNumber", "==", roomNumber);
                 q.get().then(snapshot => {
                     const batch = db.batch();
                     snapshot.docs.forEach(doc => {
-                        batch.update(doc.ref, { isReadByAdmin: true });
+                        if (doc.data().isReadByAdmin === false && doc.data().sender !== 'Admin') {
+                           batch.update(doc.ref, { isReadByAdmin: true });
+                        }
                     });
                     batch.commit().catch(err => console.error("Error marking chat as read:", err));
                 });
