@@ -1,650 +1,1611 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kabin - Sistem Pemesanan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        @keyframes blink {
-            0%, 40%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(0.1); }
-        }
-        .eye-blink { animation: blink 4s infinite; }
-        @keyframes talk {
-            0%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(0.7); }
-        }
-        .mouth-talk { animation: talk 2s infinite; }
-    </style>
-</head>
-<body class="bg-gray-100">
-    <div id="root"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kabin - Sistem Layanan Kapal</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <!-- React & Babel CDN -->
+        <script
+            src="https://unpkg.com/react@18/umd/react.development.js"
+            crossorigin
+        ></script>
+        <script
+            src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+            crossorigin
+        ></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <!-- Firebase Modular SDK (v9+) -->
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            window.firebaseApp = { initializeApp };
+        </script>
+        <script type="module">
+            import {
+                getAuth,
+                onAuthStateChanged,
+                signInAnonymously,
+                signInWithCustomToken,
+                setPersistence,
+                inMemoryPersistence,
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            window.firebaseAuth = {
+                getAuth,
+                onAuthStateChanged,
+                signInAnonymously,
+                signInWithCustomToken,
+                setPersistence,
+                inMemoryPersistence,
+            };
+        </script>
+        <script type="module">
+            import {
+                getFirestore,
+                collection,
+                doc,
+                addDoc,
+                updateDoc,
+                onSnapshot,
+                query,
+                where,
+                orderBy,
+                serverTimestamp,
+                getDocs,
+                writeBatch,
+            } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            window.firebaseFirestore = {
+                getFirestore,
+                collection,
+                doc,
+                addDoc,
+                updateDoc,
+                onSnapshot,
+                query,
+                where,
+                orderBy,
+                serverTimestamp,
+                getDocs,
+                writeBatch,
+            };
+        </script>
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            @keyframes blink {
+                0%,
+                40%,
+                100% {
+                    transform: scaleY(1);
+                }
+                50% {
+                    transform: scaleY(0.1);
+                }
+            }
+            .eye-blink {
+                animation: blink 4s infinite;
+            }
+            @keyframes talk {
+                0%,
+                100% {
+                    transform: scaleY(1);
+                }
+                50% {
+                    transform: scaleY(0.7);
+                }
+            }
+            .mouth-talk {
+                animation: talk 2s infinite;
+            }
+            /* Custom scrollbar for webkit browsers */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100">
+        <div id="root"></div>
 
-    <script type="text/javascript">
-        // --- KONFIGURASI FIREBASE ANDA SUDAH DIMASUKKAN ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDVvdwyTXNZC0cFrwrLI2oq47uvbbtTtzw",
-            authDomain: "project-moksha-a59af.firebaseapp.com",
-            projectId: "project-moksha-a59af",
-            storageBucket: "project-moksha-a59af.firebasestorage.app",
-            messagingSenderId: "565916093642",
-            appId: "1:565916093642:web:9f3e6b03b1790e8b793833",
-            measurementId: "G-LBL8336HC6"
-        };
-        // ----------------------------------------------------
-        window.__firebase_config = JSON.stringify(firebaseConfig);
-        window.__app_id = firebaseConfig.appId;
-        window.__initial_auth_token = null; 
-    </script>
+        <script type="text/javascript">
+            // --- KONFIGURASI FIREBASE ANDA SUDAH DIMASUKKAN ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyDVvdwyTXNZC0cFrwrLI2oq47uvbbtTtzw",
+                authDomain: "project-moksha-a59af.firebaseapp.com",
+                projectId: "project-moksha-a59af",
+                storageBucket: "project-moksha-a59af.firebasestorage.app",
+                messagingSenderId: "565916093642",
+                appId: "1:565916093642:web:9f3e6b03b1790e8b793833",
+                measurementId: "G-LBL8336HC6",
+            };
+            // ----------------------------------------------------
+            window.__firebase_config = JSON.stringify(firebaseConfig);
+            window.__app_id = firebaseConfig.appId;
+            window.__initial_auth_token = null;
+        </script>
 
-    <script type="text/babel">
-        const { initializeApp } = firebase;
-        const { onAuthStateChanged } = firebase.auth;
-        const { useState, useEffect, createContext, useContext, useRef } = React;
+        <script type="text/babel">
+            // --- Firebase Modular Imports ---
+            const { initializeApp } = window.firebaseApp;
+            const {
+                getAuth,
+                onAuthStateChanged,
+                signInAnonymously,
+                signInWithCustomToken,
+                setPersistence,
+                inMemoryPersistence,
+            } = window.firebaseAuth;
+            const {
+                getFirestore,
+                collection,
+                doc,
+                addDoc,
+                updateDoc,
+                onSnapshot,
+                query,
+                where,
+                orderBy,
+                serverTimestamp,
+                getDocs,
+                writeBatch,
+            } = window.firebaseFirestore;
 
-        const AppContext = createContext();
+            // --- React Hooks ---
+            const { useState, useEffect, createContext, useContext, useRef } =
+                React;
 
-        // Custom Hook to detect user inactivity
-        function useIdle(onIdle, idleTime = 30000) { // Default to 30 seconds
-            const timeoutId = useRef();
+            // --- Contexts ---
+            const AppContext = createContext();
+            const LanguageContext = createContext();
 
-            const resetTimer = () => {
-                clearTimeout(timeoutId.current);
-                timeoutId.current = setTimeout(onIdle, idleTime);
+            // --- Translation System ---
+            const translations = {
+                en: {
+                    welcome: "Welcome!",
+                    enterRoomName: "Please enter your room name.",
+                    roomNamePlaceholder: "Example: ROOM 1",
+                    login: "Login",
+                    checking: "Checking...",
+                    roomNotFound: "Room not found.",
+                    emptyRoomName: "Room name cannot be empty.",
+                    serverError: "Failed to contact server.",
+                    hello: "Hello",
+                    welcomeAboard: "Welcome Aboard",
+                    callStaff: "Call Staff",
+                    staffCalled: "Staff Called...",
+                    logout: "Logout",
+                    menu: "Menu",
+                    history: "History",
+                    shipInfo: "Ship Info",
+                    chat: "Chat",
+                    orderMenu: "Order Menu",
+                    orderHistory: "Order History",
+                    shipSchedule: "Ship Schedule & Info",
+                    chatWithAdmin: "Chat with Admin",
+                    yourCart: "Your Cart",
+                    cartIsEmpty: "Your cart is empty.",
+                    total: "Total",
+                    close: "Close",
+                    placeOrder: "Place Order",
+                    delete: "Delete",
+                    addToCart: "Add to Cart",
+                    chooseAddons: "Choose Add-ons",
+                    yourOrderHistory: "Your Order History",
+                    noOrdersYet: "You have no past orders.",
+                    orderOn: "Order on",
+                    order: "Order",
+                    cancelOrder: "Cancel Order",
+                    confirmCancel:
+                        "Are you sure you want to cancel this order?",
+                    scheduleUnavailable: "Schedule is not available yet.",
+                    typeYourMessage: "Type your message...",
+                    send: "Send",
+                    you: "You",
+                    admin: "Admin",
+                    itemAddedToCart: "added to cart!",
+                    orderPlacedSuccessfully: "Order placed successfully!",
+                    loadingHistory: "Loading history...",
+                    loadingSchedule: "Loading schedule...",
+                    tapToContinue: "Tap anywhere to continue",
+                    category_Makanan: "Food",
+                    category_Minuman: "Beverages",
+                    category_Dessert: "Dessert",
+                    category_Alcohol: "Alcohol",
+                    category_Lainlain: "Others",
+                    free: "Free",
+                    itemsInCart: "item(s) in Cart",
+                    additionalNotes: "Additional Notes (Optional)",
+                    additionalNotesPlaceholder:
+                        "Example: No shrimp, allergies.",
+                    status_Baru: "New",
+                    status_Diproses: "Processing",
+                    status_Selesai: "Completed",
+                    status_Dibatalkan: "Cancelled",
+                    changeLanguage: "Change Language",
+                    cancel: "Cancel",
+                    confirm: "Confirm",
+                },
+                id: {
+                    welcome: "Selamat Datang!",
+                    enterRoomName: "Silakan masukkan nama kamar Anda.",
+                    roomNamePlaceholder: "Contoh: KAMAR 1",
+                    login: "Masuk",
+                    checking: "Memeriksa...",
+                    roomNotFound: "Kamar tidak ditemukan.",
+                    emptyRoomName: "Nama kamar tidak boleh kosong.",
+                    serverError: "Gagal menghubungi server.",
+                    hello: "Halo",
+                    welcomeAboard: "Selamat Datang",
+                    callStaff: "Panggil Staf",
+                    staffCalled: "Staf Dipanggil...",
+                    logout: "Logout",
+                    menu: "Menu",
+                    history: "Riwayat",
+                    shipInfo: "Info Kapal",
+                    chat: "Chat",
+                    orderMenu: "Pesan Menu",
+                    orderHistory: "Riwayat Pesanan",
+                    shipSchedule: "Jadwal & Informasi Kapal",
+                    chatWithAdmin: "Chat dengan Admin",
+                    yourCart: "Keranjang Anda",
+                    cartIsEmpty: "Keranjang Anda kosong.",
+                    total: "Total",
+                    close: "Tutup",
+                    placeOrder: "Buat Pesanan",
+                    delete: "Hapus",
+                    addToCart: "Tambah ke Keranjang",
+                    chooseAddons: "Pilih Add-ons",
+                    yourOrderHistory: "Riwayat Pesanan Anda",
+                    noOrdersYet: "Anda belum pernah memesan.",
+                    orderOn: "Pesanan pada",
+                    order: "Pesanan",
+                    cancelOrder: "Batalkan Pesanan",
+                    confirmCancel:
+                        "Apakah Anda yakin ingin membatalkan pesanan ini?",
+                    scheduleUnavailable: "Jadwal belum tersedia.",
+                    typeYourMessage: "Ketik pesan Anda...",
+                    send: "Kirim",
+                    you: "Anda",
+                    admin: "Admin",
+                    itemAddedToCart: "ditambahkan ke keranjang!",
+                    orderPlacedSuccessfully: "Pesanan berhasil dibuat!",
+                    loadingHistory: "Memuat riwayat...",
+                    loadingSchedule: "Memuat jadwal...",
+                    tapToContinue: "Ketuk di mana saja untuk melanjutkan",
+                    category_Makanan: "Makanan",
+                    category_Minuman: "Minuman",
+                    category_Dessert: "Dessert",
+                    category_Alcohol: "Alkohol",
+                    category_Lainlain: "Lain-lain",
+                    free: "Gratis",
+                    itemsInCart: "item di Keranjang",
+                    additionalNotes: "Catatan Tambahan (Opsional)",
+                    additionalNotesPlaceholder:
+                        "Contoh: Tidak pakai udang, alergi.",
+                    status_Baru: "Baru",
+                    status_Diproses: "Diproses",
+                    status_Selesai: "Selesai",
+                    status_Dibatalkan: "Dibatalkan",
+                    changeLanguage: "Ubah Bahasa",
+                    cancel: "Batal",
+                    confirm: "Konfirmasi",
+                },
             };
 
-            useEffect(() => {
-                const events = ['mousemove', 'keydown', 'click', 'touchstart'];
+            function LanguageProvider({ children }) {
+                const [language, setLanguage] = useState("id");
+                const t = (key) => translations[language][key] || key;
+                return (
+                    <LanguageContext.Provider
+                        value={{ language, setLanguage, t }}
+                    >
+                        {children}
+                    </LanguageContext.Provider>
+                );
+            }
 
-                const handleEvent = () => {
-                    resetTimer();
-                };
+            function useTranslation() {
+                return useContext(LanguageContext);
+            }
 
-                events.forEach(event => {
-                    window.addEventListener(event, handleEvent);
-                });
-
-                resetTimer(); // Start the timer initially
-
-                return () => {
+            function useIdle(onIdle, idleTime = 60000) {
+                const timeoutId = useRef();
+                const resetTimer = () => {
                     clearTimeout(timeoutId.current);
-                    events.forEach(event => {
-                        window.removeEventListener(event, handleEvent);
-                    });
+                    timeoutId.current = setTimeout(onIdle, idleTime);
                 };
-            }, [onIdle, idleTime]);
-        }
+                useEffect(() => {
+                    const events = [
+                        "mousemove",
+                        "keydown",
+                        "click",
+                        "touchstart",
+                    ];
+                    const handleEvent = () => resetTimer();
+                    events.forEach((event) =>
+                        window.addEventListener(event, handleEvent)
+                    );
+                    resetTimer();
+                    return () => {
+                        clearTimeout(timeoutId.current);
+                        events.forEach((event) =>
+                            window.removeEventListener(event, handleEvent)
+                        );
+                    };
+                }, [onIdle, idleTime]);
+            }
 
-        function ConfirmationModal({ message, onConfirm, onCancel, show }) {
-            if (!show) return null;
-            return (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
-                        <p className="text-lg text-gray-800 mb-6">{message}</p>
-                        <div className="flex justify-center space-x-4">
-                            <button onClick={onCancel} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Batal</button>
-                            <button onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Konfirmasi</button>
-                        </div>
-                    </div>
-                </div>
+            const FlagUK = () => (
+                <svg className="w-6 h-6" viewBox="0 0 60 30">
+                    <clipPath id="a">
+                        <path d="M0 0v30h60V0z" />
+                    </clipPath>
+                    <path d="M0 0v30h60V0z" fill="#012169" />
+                    <path
+                        d="M0 0l60 30m0-30L0 30"
+                        stroke="#fff"
+                        strokeWidth="6"
+                    />
+                    <path
+                        d="M0 0l60 30m0-30L0 30"
+                        clipPath="url(#a)"
+                        stroke="#C8102E"
+                        strokeWidth="4"
+                    />
+                    <path d="M30 0v30M0 15h60" stroke="#fff" strokeWidth="10" />
+                    <path
+                        d="M30 0v30M0 15h60"
+                        stroke="#C8102E"
+                        strokeWidth="6"
+                    />
+                </svg>
             );
-        }
-
-        function App() {
-            const [loggedInRoom, setLoggedInRoom] = useState(null);
-            const [db, setDb] = useState(null);
-            const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-            const [currentView, setCurrentView] = useState('LOGIN'); // LOGIN, WELCOME, DASHBOARD
-
-            useEffect(() => {
-                try {
-                    const config = JSON.parse(window.__firebase_config);
-                    if (!config || config.apiKey === "YOUR_API_KEY") {
-                        setError("Konfigurasi Firebase belum diatur. Harap hubungi admin.");
-                        setLoading(false);
-                        return;
-                    }
-                    const app = initializeApp(config);
-                    setDb(firebase.firestore(app));
-                    const auth = firebase.auth(app);
-                    auth.signInAnonymously().catch(err => console.error("Gagal login anonim:", err));
-                    setLoading(false);
-                } catch (e) {
-                    console.error("Error inisialisasi Firebase:", e);
-                    setError("Gagal memuat Firebase. Periksa konsol untuk detail.");
-                    setLoading(false);
-                }
-            }, []);
-            
-            const handleLogin = (roomData) => {
-                setLoggedInRoom(roomData);
-                setCurrentView('WELCOME');
-            };
-
-            const handleLogout = () => {
-                setLoggedInRoom(null);
-                setCurrentView('LOGIN');
-            };
-
-            if (loading) return <div className="min-h-screen flex items-center justify-center">Memuat...</div>;
-            if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-100 text-red-700">{error}</div>;
-
-            return (
-                <AppContext.Provider value={{ db, appId: window.__app_id, loggedInRoom }}>
-                    {currentView === 'LOGIN' && <RoomLogin onLogin={handleLogin} />}
-                    {currentView === 'WELCOME' && <WelcomeScreen room={loggedInRoom} onContinue={() => setCurrentView('DASHBOARD')} />}
-                    {currentView === 'DASHBOARD' && <RoomDashboard room={loggedInRoom} onLogout={handleLogout} onIdle={() => setCurrentView('WELCOME')} />}
-                </AppContext.Provider>
+            const FlagIndonesia = () => (
+                <svg className="w-6 h-6" viewBox="0 0 900 600">
+                    <path fill="#e70011" d="M0 0h900v300H0z" />
+                    <path fill="#fff" d="M0 300h900v300H0z" />
+                </svg>
             );
-        }
-        
-        function RoomLogin({ onLogin }) {
-            const { db, appId } = useContext(AppContext);
-            const [roomName, setRoomName] = useState('');
-            const [error, setError] = useState('');
-            const [loading, setLoading] = useState(false);
 
-            const handleLogin = async () => {
-                if (!roomName.trim()) return setError("Nama kamar tidak boleh kosong.");
-                setLoading(true);
-                setError('');
-                const roomsRef = db.collection(`artifacts/${appId}/public/data/rooms`);
-                const q = roomsRef.where("name", "==", roomName.trim().toUpperCase());
-                try {
-                    const snapshot = await q.get();
-                    if (snapshot.empty) {
-                        setError("Kamar tidak ditemukan.");
-                    } else {
-                        const roomDoc = snapshot.docs[0];
-                        onLogin({ id: roomDoc.id, ...roomDoc.data() });
-                    }
-                } catch(e) {
-                    console.error("Error logging in:", e);
-                    setError("Gagal menghubungi server.");
-                }
-                setLoading(false);
-            };
-
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 to-teal-500">
-                    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
-                        <h2 className="text-4xl font-bold text-gray-800 mb-2">Selamat Datang!</h2>
-                        <p className="text-gray-600 mb-6">Silakan masukkan nama kamar Anda.</p>
-                        {error && <p className="text-red-500 mb-4">{error}</p>}
-                        <input
-                            type="text"
-                            placeholder="Contoh: KAMAR 1"
-                            value={roomName}
-                            onChange={(e) => setRoomName(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-lg"
-                        />
-                        <button onClick={handleLogin} disabled={loading} className="mt-6 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50">
-                            {loading ? 'Memeriksa...' : 'Masuk'}
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        function WelcomeScreen({ room, onContinue }) {
-            const [time, setTime] = useState(new Date());
-            const [greeting, setGreeting] = useState('');
-            const [date, setDate] = useState('');
-
-            useEffect(() => {
-                const timer = setInterval(() => setTime(new Date()), 1000);
-                const hour = new Date().getHours();
-                if (hour >= 5 && hour < 12) setGreeting('Selamat Pagi');
-                else if (hour >= 12 && hour < 18) setGreeting('Selamat Siang');
-                else setGreeting('Selamat Malam');
-
-                setDate(new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-
-                return () => {
-                    clearInterval(timer);
-                };
-            }, []);
-
-            const formatTime = (date) => {
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-                return `${hours}:${minutes}:${seconds}`;
-            };
-
-            return (
-                <div onClick={onContinue} className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-800 to-teal-600 text-white p-4 cursor-pointer">
-                    <div className="text-center">
-                        <svg className="w-48 h-48 sm:w-64 sm:h-64 mx-auto mb-6" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M84 40V75C84 79.9706 79.9706 84 75 84H25C20.0294 84 16 79.9706 16 75V40C16 35.0294 20.0294 31 25 31H75C79.9706 31 84 35.0294 84 40Z" fill="#D1D5DB"/>
-                            <path d="M75 16H25C20.0294 16 16 20.0294 16 25V31H84V25C84 20.0294 79.9706 16 75 16Z" fill="#9CA3AF"/>
-                            <circle className="eye-blink" cx="35" cy="50" r="5" fill="white"/>
-                            <circle className="eye-blink" style={{ animationDelay: '0.2s' }} cx="65" cy="50" r="5" fill="white"/>
-                            <path className="mouth-talk" d="M42 68C42 66.8954 45.5817 66 50 66C54.4183 66 58 66.8954 58 68V70C58 71.1046 54.4183 72 50 72C45.5817 72 42 71.1046 42 70V68Z" fill="white"/>
-                        </svg>
-                        <p className="text-5xl sm:text-6xl font-bold tracking-wider">{formatTime(time)}</p>
-                        <p className="text-lg sm:text-xl mt-2">{date}</p>
-                        <h1 className="text-2xl sm:text-3xl font-light mt-4">{greeting}, {room.title || ''} {room.displayName || room.name}!</h1>
-                    </div>
-                    <p className="mt-12 text-gray-300 animate-pulse">Ketuk di mana saja untuk melanjutkan</p>
-                </div>
-            );
-        }
-
-        function RoomDashboard({ room, onLogout, onIdle }) {
-            const [isCalling, setIsCalling] = useState(room.isCalling || false);
-            const { db, appId } = useContext(AppContext);
-            const [activeTab, setActiveTab] = useState('pesan');
-
-            useIdle(onIdle, 30000);
-
-            useEffect(() => {
-                const roomRef = db.doc(`artifacts/${appId}/public/data/rooms/${room.id}`);
-                const unsubscribe = roomRef.onSnapshot((doc) => {
-                    setIsCalling(doc.data()?.isCalling || false);
-                });
-                return () => unsubscribe();
-            }, [db, room.id, appId]);
-
-            const handleCallStaff = async () => {
-                if (isCalling) return;
-                const roomRef = db.doc(`artifacts/${appId}/public/data/rooms/${room.id}`);
-                await roomRef.update({ isCalling: true });
-            };
-
-            return (
-                <div className="min-h-screen bg-gray-50">
-                    <header className="bg-white p-4 shadow-md sticky top-0 z-20">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                                <div className="bg-blue-100 p-2 rounded-full">
-                                    <svg className="w-6 h-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M12 22V8M5 12H2a10 10 0 0 0 20 0h-3M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h1 className="text-lg font-bold text-gray-800">Hello, {room.title || ''} {room.displayName || room.name}</h1>
-                                    <p className="text-sm text-gray-500">Welcome Aboard</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
+            function ConfirmationModal({ message, onConfirm, onCancel, show }) {
+                const { t } = useTranslation();
+                if (!show) return null;
+                return (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                            <p className="text-lg text-gray-800 mb-6">
+                                {message}
+                            </p>
+                            <div className="flex justify-center space-x-4">
                                 <button
-                                    onClick={handleCallStaff}
-                                    disabled={isCalling}
-                                    className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${isCalling ? 'bg-yellow-400 text-yellow-800 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                                    onClick={onCancel}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                    <span className="hidden sm:inline">{isCalling ? 'Dipanggil' : 'Panggil Staf'}</span>
+                                    {t("cancel")}
                                 </button>
-                                <button onClick={onLogout} className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                <button
+                                    onClick={onConfirm}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {t("confirm")}
                                 </button>
                             </div>
                         </div>
-                    </header>
-                    <nav className="bg-blue-800 shadow-sm p-2 flex justify-center gap-1 rounded-b-xl sticky top-[72px] z-10">
-                        <button onClick={() => setActiveTab('pesan')} className={`px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${activeTab === 'pesan' ? 'border-teal-400 text-white' : 'border-transparent text-blue-200 hover:text-white'}`}>Menu</button>
-                        <button onClick={() => setActiveTab('riwayat')} className={`px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${activeTab === 'riwayat' ? 'border-teal-400 text-white' : 'border-transparent text-blue-200 hover:text-white'}`}>Riwayat</button>
-                        <button onClick={() => setActiveTab('info')} className={`px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${activeTab === 'info' ? 'border-teal-400 text-white' : 'border-transparent text-blue-200 hover:text-white'}`}>Info</button>
-                        <button onClick={() => setActiveTab('chat')} className={`px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${activeTab === 'chat' ? 'border-teal-400 text-white' : 'border-transparent text-blue-200 hover:text-white'}`}>Chat</button>
-                    </nav>
-                    <main className="p-4 sm:p-6">
-                        {activeTab === 'pesan' && <OrderItems />}
-                        {activeTab === 'riwayat' && <OrderHistory />}
-                        {activeTab === 'info' && <ShipInfo />}
-                        {activeTab === 'chat' && <RoomChat />}
-                    </main>
-                </div>
-            );
-        }
+                    </div>
+                );
+            }
 
-        function OrderItems() {
-            const { db, appId, loggedInRoom } = useContext(AppContext);
-            const [items, setItems] = useState([]);
-            const [cart, setCart] = useState([]);
-            const [itemAddOnSelections, setItemAddOnSelections] = useState({});
-            const [showCartModal, setShowCartModal] = useState(false);
-            const [notification, setNotification] = useState('');
-            const [orderDescription, setOrderDescription] = useState('');
-            const categories = ['Makanan', 'Minuman', 'Dessert', 'Alcohol', 'Lain-lain'];
+            function App() {
+                const [loggedInRoom, setLoggedInRoom] = useState(null);
+                const [db, setDb] = useState(null);
+                const [loading, setLoading] = useState(true);
+                const [error, setError] = useState(null);
+                const [currentView, setCurrentView] = useState("LOGIN"); // LOGIN, WELCOME, DASHBOARD
 
-            useEffect(() => {
-                const itemsRef = db.collection(`artifacts/${appId}/public/data/items`).orderBy('name');
-                const unsubscribe = itemsRef.onSnapshot(snapshot => {
-                    setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                });
-                return () => unsubscribe();
-            }, [db, appId]);
+                useEffect(() => {
+                    try {
+                        const config = JSON.parse(window.__firebase_config);
+                        const app = initializeApp(config);
+                        const auth = getAuth(app);
+                        setDb(getFirestore(app));
 
-            const showNotification = (message) => {
-                setNotification(message);
-                setTimeout(() => {
-                    setNotification('');
-                }, 2000);
-            };
+                        const signIn = async () => {
+                            await setPersistence(auth, inMemoryPersistence);
+                            if (window.__initial_auth_token) {
+                                await signInWithCustomToken(
+                                    auth,
+                                    window.__initial_auth_token
+                                );
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        };
 
-            const groupedItems = items.reduce((acc, item) => {
-                const category = item.category || 'Lain-lain';
-                (acc[category] = acc[category] || []).push(item);
-                return acc;
-            }, {});
+                        onAuthStateChanged(auth, (user) => {
+                            if (user) {
+                                setLoading(false);
+                            }
+                        });
 
-            const toggleAddOn = (itemId, addOn) => {
-                setItemAddOnSelections(prev => {
-                    const currentSelections = prev[itemId] || [];
-                    const isSelected = currentSelections.some(a => a.name === addOn.name);
-                    const newSelections = isSelected ? currentSelections.filter(a => a.name !== addOn.name) : [...currentSelections, addOn];
-                    return { ...prev, [itemId]: newSelections };
-                });
-            };
+                        signIn().catch((err) => {
+                            console.error("Gagal login anonim:", err);
+                            setError(
+                                "Gagal terhubung ke layanan. Silakan coba lagi."
+                            );
+                            setLoading(false);
+                        });
+                    } catch (e) {
+                        console.error("Error inisialisasi Firebase:", e);
+                        setError(
+                            "Gagal memuat aplikasi. Periksa konsol untuk detail."
+                        );
+                        setLoading(false);
+                    }
+                }, []);
 
-            const addToCart = (item) => {
-                const selectedAddOns = itemAddOnSelections[item.id] || [];
-                const cartItem = {
-                    ...item,
-                    cartId: Date.now(),
-                    selectedAddOns
+                const handleLogin = (roomData) => {
+                    setLoggedInRoom(roomData);
+                    setCurrentView("WELCOME");
                 };
-                setCart(prev => [...prev, cartItem]);
-                showNotification(`${item.name} ditambahkan ke keranjang!`);
-            };
 
-            const removeFromCart = (cartId) => {
-                setCart(prev => prev.filter(item => item.cartId !== cartId));
-            };
-            
-            const placeOrder = async () => {
-                if (cart.length === 0) return;
-                const total = cart.reduce((sum, item) => sum + item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
-                
-                await db.collection(`artifacts/${appId}/public/data/orders`).add({
-                    roomNumber: loggedInRoom.name,
-                    items: cart,
-                    total: total,
-                    status: 'Baru',
-                    timestamp: new Date(),
-                    description: orderDescription.trim()
-                });
-                setCart([]);
-                setShowCartModal(false);
-                setOrderDescription('');
-                showNotification("Pesanan berhasil dibuat!");
-            };
+                const handleLogout = () => {
+                    setLoggedInRoom(null);
+                    setCurrentView("LOGIN");
+                };
 
-            return (
-                <div className="relative">
-                    {categories.map(category => (
-                        (groupedItems[category] && groupedItems[category].length > 0) && (
-                            <div key={category} className="mb-8">
-                                <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-600 pb-2">{category}</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {groupedItems[category].map(item => (
-                                        <div key={item.id} className="bg-white border rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
-                                            <div>
-                                                <h4 className="text-xl font-semibold">{item.name}</h4>
-                                                <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-                                                <p className={`font-bold text-lg ${item.price === 0 ? 'text-green-600' : 'text-blue-600'}`}>{item.price === 0 ? 'Gratis' : `Rp${item.price.toLocaleString('id-ID')}`}</p>
-                                                {item.addOns && item.addOns.length > 0 && (
-                                                    <div className="mt-4 border-t border-gray-200 pt-3">
-                                                        <p className="font-semibold text-sm mb-2">Pilih Add-ons:</p>
-                                                        {item.addOns.map(addOn => (
-                                                            <label key={addOn.name} className="flex items-center text-sm mb-1">
-                                                                <input type="checkbox" onChange={() => toggleAddOn(item.id, addOn)} className="form-checkbox h-4 w-4 text-blue-600 rounded"/>
-                                                                <span className="ml-2">{addOn.name} (+Rp{addOn.price.toLocaleString('id-ID')})</span>
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button onClick={() => addToCart(item)} className="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors">Tambah ke Keranjang</button>
-                                        </div>
-                                    ))}
-                                </div>
+                if (loading)
+                    return (
+                        <div className="min-h-screen flex items-center justify-center">
+                            Memuat...
+                        </div>
+                    );
+                if (error)
+                    return (
+                        <div className="min-h-screen flex items-center justify-center p-4 bg-red-100 text-red-700">
+                            {error}
+                        </div>
+                    );
+
+                return (
+                    <AppContext.Provider
+                        value={{ db, appId: window.__app_id, loggedInRoom }}
+                    >
+                        {currentView === "LOGIN" && (
+                            <RoomLogin onLogin={handleLogin} />
+                        )}
+                        {currentView === "WELCOME" && (
+                            <WelcomeScreen
+                                room={loggedInRoom}
+                                onContinue={() => setCurrentView("DASHBOARD")}
+                            />
+                        )}
+                        {currentView === "DASHBOARD" && (
+                            <RoomDashboard
+                                room={loggedInRoom}
+                                onLogout={handleLogout}
+                                onIdle={() => setCurrentView("WELCOME")}
+                            />
+                        )}
+                    </AppContext.Provider>
+                );
+            }
+
+            function RoomLogin({ onLogin }) {
+                const { db, appId } = useContext(AppContext);
+                const { t, language, setLanguage } = useTranslation();
+                const [roomName, setRoomName] = useState("");
+                const [error, setError] = useState("");
+                const [loading, setLoading] = useState(false);
+
+                const handleLogin = async () => {
+                    if (!roomName.trim()) return setError(t("emptyRoomName"));
+                    setLoading(true);
+                    setError("");
+                    const roomsRef = collection(
+                        db,
+                        `artifacts/${appId}/public/data/rooms`
+                    );
+                    const q = query(
+                        roomsRef,
+                        where("name", "==", roomName.trim().toUpperCase())
+                    );
+                    try {
+                        const snapshot = await getDocs(q);
+                        if (snapshot.empty) {
+                            setError(t("roomNotFound"));
+                        } else {
+                            const roomDoc = snapshot.docs[0];
+                            onLogin({ id: roomDoc.id, ...roomDoc.data() });
+                        }
+                    } catch (e) {
+                        console.error("Error logging in:", e);
+                        setError(t("serverError"));
+                    }
+                    setLoading(false);
+                };
+
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 to-teal-500 p-4">
+                        <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center relative">
+                            <div className="absolute top-4 right-4">
+                                <button
+                                    onClick={() =>
+                                        setLanguage((lang) =>
+                                            lang === "id" ? "en" : "id"
+                                        )
+                                    }
+                                    className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+                                >
+                                    {language === "id" ? (
+                                        <FlagUK />
+                                    ) : (
+                                        <FlagIndonesia />
+                                    )}
+                                </button>
                             </div>
-                        )
-                    ))}
-                    {cart.length > 0 && (
-                        <div className="fixed bottom-6 right-6">
-                            <button onClick={() => setShowCartModal(true)} className="bg-teal-500 text-white rounded-full p-4 shadow-lg flex items-center">
-                                <span className="mr-2">{cart.length} item di Keranjang</span>
-                                <span>🛒</span>
+                            <h2 className="text-4xl font-bold text-gray-800 mb-2">
+                                {t("welcome")}
+                            </h2>
+                            <p className="text-gray-600 mb-6">
+                                {t("enterRoomName")}
+                            </p>
+                            {error && (
+                                <p className="text-red-500 mb-4">{error}</p>
+                            )}
+                            <input
+                                type="text"
+                                placeholder={t("roomNamePlaceholder")}
+                                value={roomName}
+                                onChange={(e) => setRoomName(e.target.value)}
+                                onKeyPress={(e) =>
+                                    e.key === "Enter" && handleLogin()
+                                }
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-lg"
+                            />
+                            <button
+                                onClick={handleLogin}
+                                disabled={loading}
+                                className="mt-6 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:opacity-50"
+                            >
+                                {loading ? t("checking") : t("login")}
                             </button>
                         </div>
-                    )}
-                    {showCartModal && (
-                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-                                <h3 className="text-2xl font-bold mb-4">Keranjang Anda</h3>
-                                <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-                                    {cart.map(item => (
-                                        <div key={item.cartId} className="flex justify-between items-center border-b pb-2">
-                                            <div>
-                                                <p className="font-semibold">{item.name}</p>
-                                                {item.selectedAddOns.length > 0 && (
-                                                    <ul className="text-xs text-gray-500 list-disc list-inside ml-2">
-                                                        {item.selectedAddOns.map(ao => <li key={ao.name}>{ao.name}</li>)}
-                                                    </ul>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center space-x-4">
-                                                <p>Rp{(item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString('id-ID')}</p>
-                                                <button onClick={() => removeFromCart(item.cartId)} className="text-red-500 hover:text-red-700 font-bold">Hapus</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
-                                    <textarea 
-                                        value={orderDescription}
-                                        onChange={(e) => setOrderDescription(e.target.value)}
-                                        rows="2"
-                                        className="w-full p-2 border rounded"
-                                        placeholder="Contoh: Tidak pakai udang, alergi."
-                                    ></textarea>
-                                </div>
-                                <div className="flex justify-between font-bold text-xl mt-4">
-                                    <p>Total:</p>
-                                    <p>Rp{cart.reduce((sum, item) => sum + item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0), 0).toLocaleString('id-ID')}</p>
-                                </div>
-                                <div className="mt-6 flex justify-end space-x-2">
-                                    <button onClick={() => setShowCartModal(false)} className="bg-gray-300 px-4 py-2 rounded">Tutup</button>
-                                    <button onClick={placeOrder} className="bg-green-600 text-white px-4 py-2 rounded">Buat Pesanan</button>
-                                </div>
-                            </div>
+                    </div>
+                );
+            }
+
+            function WelcomeScreen({ room, onContinue }) {
+                const [time, setTime] = useState(new Date());
+                const [greeting, setGreeting] = useState("");
+                const [date, setDate] = useState("");
+                const { language, t } = useTranslation();
+
+                useEffect(() => {
+                    const timer = setInterval(() => setTime(new Date()), 1000);
+                    const hour = new Date().getHours();
+                    if (hour >= 5 && hour < 12)
+                        setGreeting(
+                            language === "id" ? "Selamat Pagi" : "Good Morning"
+                        );
+                    else if (hour >= 12 && hour < 18)
+                        setGreeting(
+                            language === "id"
+                                ? "Selamat Siang"
+                                : "Good Afternoon"
+                        );
+                    else
+                        setGreeting(
+                            language === "id" ? "Selamat Malam" : "Good Evening"
+                        );
+
+                    setDate(
+                        new Date().toLocaleDateString(
+                            language === "id" ? "id-ID" : "en-US",
+                            {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            }
+                        )
+                    );
+
+                    return () => clearInterval(timer);
+                }, [language]);
+
+                const formatTime = (date) =>
+                    `${String(date.getHours()).padStart(2, "0")}:${String(
+                        date.getMinutes()
+                    ).padStart(2, "0")}:${String(date.getSeconds()).padStart(
+                        2,
+                        "0"
+                    )}`;
+
+                return (
+                    <div
+                        onClick={onContinue}
+                        className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-800 to-teal-600 text-white p-4 cursor-pointer"
+                    >
+                        <div className="text-center">
+                            <svg
+                                className="w-48 h-48 sm:w-64 sm:h-64 mx-auto mb-6"
+                                viewBox="0 0 100 100"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M84 40V75C84 79.9706 79.9706 84 75 84H25C20.0294 84 16 79.9706 16 75V40C16 35.0294 20.0294 31 25 31H75C79.9706 31 84 35.0294 84 40Z"
+                                    fill="#D1D5DB"
+                                />
+                                <path
+                                    d="M75 16H25C20.0294 16 16 20.0294 16 25V31H84V25C84 20.0294 79.9706 16 75 16Z"
+                                    fill="#9CA3AF"
+                                />
+                                <circle
+                                    className="eye-blink"
+                                    cx="35"
+                                    cy="50"
+                                    r="5"
+                                    fill="white"
+                                />
+                                <circle
+                                    className="eye-blink"
+                                    style={{ animationDelay: "0.2s" }}
+                                    cx="65"
+                                    cy="50"
+                                    r="5"
+                                    fill="white"
+                                />
+                                <path
+                                    className="mouth-talk"
+                                    d="M42 68C42 66.8954 45.5817 66 50 66C54.4183 66 58 66.8954 58 68V70C58 71.1046 54.4183 72 50 72C45.5817 72 42 71.1046 42 70V68Z"
+                                    fill="white"
+                                />
+                            </svg>
+                            <p className="text-5xl sm:text-6xl font-bold tracking-wider">
+                                {formatTime(time)}
+                            </p>
+                            <p className="text-lg sm:text-xl mt-2">{date}</p>
+                            <h1 className="text-2xl sm:text-3xl font-light mt-4">
+                                {greeting}, {room.title || ""}{" "}
+                                {room.displayName || room.name}!
+                            </h1>
                         </div>
-                    )}
-                </div>
-            );
-        }
+                        <p className="mt-12 text-gray-300 animate-pulse">
+                            {t("tapToContinue")}
+                        </p>
+                    </div>
+                );
+            }
 
-        function OrderHistory() {
-            const { db, appId, loggedInRoom } = useContext(AppContext);
-            const [orders, setOrders] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [showCancelModal, setShowCancelModal] = useState(false);
-            const [orderToCancel, setOrderToCancel] = useState(null);
+            function RoomDashboard({ room, onLogout, onIdle }) {
+                const { db, appId } = useContext(AppContext);
+                const { t, language, setLanguage } = useTranslation();
+                const [isCalling, setIsCalling] = useState(
+                    room.isCalling || false
+                );
+                const [activeTab, setActiveTab] = useState("pesan");
+                const [settingsOpen, setSettingsOpen] = useState(false);
 
-            useEffect(() => {
-                if (!db || !loggedInRoom) return;
-                const ordersRef = db.collection(`artifacts/${appId}/public/data/orders`).where('roomNumber', '==', loggedInRoom.name);
-                const unsubscribe = ordersRef.onSnapshot(snapshot => {
-                    const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    fetchedOrders.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                    setOrders(fetchedOrders);
-                    setLoading(false);
-                });
-                return () => unsubscribe();
-            }, [db, appId, loggedInRoom]);
+                useIdle(onIdle, 60000);
 
-            const confirmCancelOrder = (orderId) => {
-                setOrderToCancel(orderId);
-                setShowCancelModal(true);
-            };
+                useEffect(() => {
+                    const roomRef = doc(
+                        db,
+                        `artifacts/${appId}/public/data/rooms`,
+                        room.id
+                    );
+                    const unsubscribe = onSnapshot(roomRef, (doc) => {
+                        setIsCalling(doc.data()?.isCalling || false);
+                    });
+                    return () => unsubscribe();
+                }, [db, room.id, appId]);
 
-            const handleCancelOrder = async () => {
-                if (!orderToCancel) return;
-                const orderRef = db.doc(`artifacts/${appId}/public/data/orders/${orderToCancel}`);
-                await orderRef.update({ status: 'Dibatalkan' });
-                setShowCancelModal(false);
-                setOrderToCancel(null);
-            };
+                const handleCallStaff = async () => {
+                    if (isCalling) return;
+                    const roomRef = doc(
+                        db,
+                        `artifacts/${appId}/public/data/rooms`,
+                        room.id
+                    );
+                    await updateDoc(roomRef, { isCalling: true });
+                };
 
-            if (loading) return <p>Memuat riwayat...</p>;
-
-            return (
-                <div className="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Riwayat Pesanan Anda</h2>
-                    {orders.length === 0 ? (<p>Anda belum pernah memesan.</p>) : (
-                        <div className="space-y-4">
-                            {orders.map(order => (
-                                <div key={order.id} className="border rounded-lg p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <p className="font-bold">Pesanan #{order.id.substring(0,6)}</p>
-                                            <p className="text-sm text-gray-500">{new Date(order.timestamp.toDate()).toLocaleString()}</p>
-                                        </div>
-                                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${order.status === 'Selesai' ? 'bg-green-100 text-green-800' : order.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{order.status}</span>
+                return (
+                    <div className="min-h-screen bg-gray-50">
+                        <header className="bg-white p-4 shadow-md sticky top-0 z-20">
+                            <div className="flex justify-between items-center max-w-7xl mx-auto">
+                                <div className="flex items-center space-x-3">
+                                    <div className="bg-blue-100 p-2 rounded-full">
+                                        <svg
+                                            className="w-6 h-6 text-blue-600"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M12 22V8M5 12H2a10 10 0 0 0 20 0h-3M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+                                        </svg>
                                     </div>
-                                    <ul className="list-disc list-inside ml-4 mb-2 text-sm">
-                                        {order.items.map(item => (
-                                            <li key={item.cartId}>{item.name}</li>
-                                        ))}
-                                    </ul>
-                                    <div className="border-t pt-2 flex justify-between items-center">
-                                        <p className="font-bold text-lg">Total: Rp{order.total.toLocaleString('id-ID')}</p>
-                                        {(order.status === 'Baru' || order.status === 'Diproses') && (
-                                            <button onClick={() => confirmCancelOrder(order.id)} className="bg-red-500 text-white text-xs font-bold py-1 px-3 rounded hover:bg-red-600">Batalkan Pesanan</button>
+                                    <div>
+                                        <h1 className="text-lg font-bold text-gray-800">
+                                            {t("hello")}, {room.title || ""}{" "}
+                                            {room.displayName || room.name}
+                                        </h1>
+                                        <p className="text-sm text-gray-500">
+                                            {t("welcomeAboard")}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={handleCallStaff}
+                                        disabled={isCalling}
+                                        className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
+                                            isCalling
+                                                ? "bg-yellow-400 text-yellow-800 cursor-not-allowed"
+                                                : "bg-red-600 hover:bg-red-700 text-white"
+                                        }`}
+                                    >
+                                        <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                            ></path>
+                                        </svg>
+                                        <span>
+                                            {t(
+                                                isCalling
+                                                    ? "staffCalled"
+                                                    : "callStaff"
+                                            )}
+                                        </span>
+                                    </button>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() =>
+                                                setSettingsOpen((prev) => !prev)
+                                            }
+                                            className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+                                        >
+                                            <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                                />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                            </svg>
+                                        </button>
+                                        {settingsOpen && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-30">
+                                                <button
+                                                    onClick={() => {
+                                                        setLanguage((lang) =>
+                                                            lang === "id"
+                                                                ? "en"
+                                                                : "id"
+                                                        );
+                                                        setSettingsOpen(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                                >
+                                                    {language === "id" ? (
+                                                        <FlagUK />
+                                                    ) : (
+                                                        <FlagIndonesia />
+                                                    )}
+                                                    <span>
+                                                        {t("changeLanguage")}
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    onClick={onLogout}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                                >
+                                                    <svg
+                                                        className="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                                        ></path>
+                                                    </svg>
+                                                    <span>{t("logout")}</span>
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    <ConfirmationModal 
-                        show={showCancelModal}
-                        message="Apakah Anda yakin ingin membatalkan pesanan ini?"
-                        onConfirm={handleCancelOrder}
-                        onCancel={() => setShowCancelModal(false)}
-                    />
-                </div>
-            );
-        }
+                            </div>
+                        </header>
+                        <nav className="bg-blue-800 shadow-sm p-2 flex justify-around items-center gap-1 rounded-b-xl sticky top-[72px] z-10">
+                            <button
+                                onClick={() => setActiveTab("pesan")}
+                                className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${
+                                    activeTab === "pesan"
+                                        ? "border-teal-400 text-white"
+                                        : "border-transparent text-blue-200 hover:text-white"
+                                }`}
+                            >
+                                {t("menu")}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("riwayat")}
+                                className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${
+                                    activeTab === "riwayat"
+                                        ? "border-teal-400 text-white"
+                                        : "border-transparent text-blue-200 hover:text-white"
+                                }`}
+                            >
+                                {t("history")}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("info")}
+                                className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${
+                                    activeTab === "info"
+                                        ? "border-teal-400 text-white"
+                                        : "border-transparent text-blue-200 hover:text-white"
+                                }`}
+                            >
+                                {t("shipInfo")}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("chat")}
+                                className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${
+                                    activeTab === "chat"
+                                        ? "border-teal-400 text-white"
+                                        : "border-transparent text-blue-200 hover:text-white"
+                                }`}
+                            >
+                                {t("chat")}
+                            </button>
+                        </nav>
+                        <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+                            {activeTab === "pesan" && <OrderItems />}
+                            {activeTab === "riwayat" && <OrderHistory />}
+                            {activeTab === "info" && <ShipInfo />}
+                            {activeTab === "chat" && <RoomChat />}
+                        </main>
+                    </div>
+                );
+            }
 
-        function ShipInfo() {
-            const { db, appId } = useContext(AppContext);
-            const [schedule, setSchedule] = useState([]);
-            const [loading, setLoading] = useState(true);
+            function OrderItems() {
+                const { db, appId, loggedInRoom } = useContext(AppContext);
+                const { t } = useTranslation();
+                const [items, setItems] = useState([]);
+                const [cart, setCart] = useState([]);
+                const [itemAddOnSelections, setItemAddOnSelections] = useState(
+                    {}
+                );
+                const [showCartModal, setShowCartModal] = useState(false);
+                const [notification, setNotification] = useState("");
+                const [orderDescription, setOrderDescription] = useState("");
+                const categories = [
+                    "Makanan",
+                    "Minuman",
+                    "Dessert",
+                    "Alcohol",
+                    "Lainlain",
+                ];
 
-            useEffect(() => {
-                if (!db) return;
-                const scheduleRef = db.collection(`artifacts/${appId}/public/data/schedule`).orderBy('timeFrom');
-                const unsubscribe = scheduleRef.onSnapshot(snapshot => {
-                    setSchedule(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                    setLoading(false);
-                });
-                return () => unsubscribe();
-            }, [db, appId]);
+                useEffect(() => {
+                    const itemsRef = collection(
+                        db,
+                        `artifacts/${appId}/public/data/items`
+                    );
+                    const q = query(itemsRef, orderBy("name"));
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        setItems(
+                            snapshot.docs.map((doc) => ({
+                                id: doc.id,
+                                ...doc.data(),
+                            }))
+                        );
+                    });
+                    return () => unsubscribe();
+                }, [db, appId]);
 
-            if (loading) return <p>Memuat jadwal...</p>;
+                const showNotification = (message) => {
+                    setNotification(message);
+                    setTimeout(() => setNotification(""), 2000);
+                };
 
-            return (
-                <div className="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                        <svg className="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        Jadwal & Informasi Kapal
-                    </h2>
-                    <div className="space-y-4">
-                        {schedule.length === 0 ? <p>Jadwal belum tersedia.</p> : schedule.map(item => (
-                            <div key={item.id} className="flex items-center p-4 bg-gray-50 rounded-lg">
-                                <div className="w-40 text-lg font-bold text-blue-700">{item.timeFrom} - {item.timeTo}</div>
-                                <div className="border-l-2 border-blue-200 pl-4">
-                                    <p className="font-semibold text-gray-800">{item.event}</p>
-                                    <p className="text-sm text-gray-500">{item.location}</p>
+                const groupedItems = items.reduce((acc, item) => {
+                    const category = item.category || "Lainlain";
+                    (acc[category] = acc[category] || []).push(item);
+                    return acc;
+                }, {});
+
+                const toggleAddOn = (itemId, addOn) => {
+                    setItemAddOnSelections((prev) => {
+                        const currentSelections = prev[itemId] || [];
+                        const isSelected = currentSelections.some(
+                            (a) => a.name === addOn.name
+                        );
+                        const newSelections = isSelected
+                            ? currentSelections.filter(
+                                  (a) => a.name !== addOn.name
+                              )
+                            : [...currentSelections, addOn];
+                        return { ...prev, [itemId]: newSelections };
+                    });
+                };
+
+                const addToCart = (item) => {
+                    const selectedAddOns = itemAddOnSelections[item.id] || [];
+                    const cartItem = {
+                        ...item,
+                        cartId: Date.now(),
+                        selectedAddOns,
+                    };
+                    setCart((prev) => [...prev, cartItem]);
+                    showNotification(`${item.name} ${t("itemAddedToCart")}`);
+                };
+
+                const removeFromCart = (cartId) => {
+                    setCart((prev) =>
+                        prev.filter((item) => item.cartId !== cartId)
+                    );
+                };
+
+                const placeOrder = async () => {
+                    if (cart.length === 0) return;
+                    const total = cart.reduce(
+                        (sum, item) =>
+                            sum +
+                            item.price +
+                            (item.selectedAddOns?.reduce(
+                                (s, ao) => s + ao.price,
+                                0
+                            ) || 0),
+                        0
+                    );
+
+                    await addDoc(
+                        collection(db, `artifacts/${appId}/public/data/orders`),
+                        {
+                            roomNumber: loggedInRoom.name,
+                            items: cart,
+                            total: total,
+                            status: "Baru",
+                            timestamp: serverTimestamp(),
+                            description: orderDescription.trim(),
+                        }
+                    );
+                    setCart([]);
+                    setShowCartModal(false);
+                    setOrderDescription("");
+                    showNotification(t("orderPlacedSuccessfully"));
+                };
+
+                return (
+                    <div className="relative">
+                        {categories.map(
+                            (category) =>
+                                groupedItems[category] &&
+                                groupedItems[category].length > 0 && (
+                                    <div key={category} className="mb-8">
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-600 pb-2">
+                                            {t(`category_${category}`)}
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {groupedItems[category].map(
+                                                (item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="bg-white border rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
+                                                    >
+                                                        <div>
+                                                            <h4 className="text-xl font-semibold">
+                                                                {item.name}
+                                                            </h4>
+                                                            <p className="text-gray-600 text-sm mb-2">
+                                                                {
+                                                                    item.description
+                                                                }
+                                                            </p>
+                                                            <p
+                                                                className={`font-bold text-lg ${
+                                                                    item.price ===
+                                                                    0
+                                                                        ? "text-green-600"
+                                                                        : "text-blue-600"
+                                                                }`}
+                                                            >
+                                                                {item.price ===
+                                                                0
+                                                                    ? t("free")
+                                                                    : `Rp${item.price.toLocaleString(
+                                                                          "id-ID"
+                                                                      )}`}
+                                                            </p>
+                                                            {item.addOns &&
+                                                                item.addOns
+                                                                    .length >
+                                                                    0 && (
+                                                                    <div className="mt-4 border-t border-gray-200 pt-3">
+                                                                        <p className="font-semibold text-sm mb-2">
+                                                                            {t(
+                                                                                "chooseAddons"
+                                                                            )}
+                                                                            :
+                                                                        </p>
+                                                                        {item.addOns.map(
+                                                                            (
+                                                                                addOn
+                                                                            ) => (
+                                                                                <label
+                                                                                    key={
+                                                                                        addOn.name
+                                                                                    }
+                                                                                    className="flex items-center text-sm mb-1"
+                                                                                >
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        onChange={() =>
+                                                                                            toggleAddOn(
+                                                                                                item.id,
+                                                                                                addOn
+                                                                                            )
+                                                                                        }
+                                                                                        className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                                                                                    />
+                                                                                    <span className="ml-2">
+                                                                                        {
+                                                                                            addOn.name
+                                                                                        }{" "}
+                                                                                        (+Rp
+                                                                                        {addOn.price.toLocaleString(
+                                                                                            "id-ID"
+                                                                                        )}
+                                                                                        )
+                                                                                    </span>
+                                                                                </label>
+                                                                            )
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() =>
+                                                                addToCart(item)
+                                                            }
+                                                            className="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            {t("addToCart")}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                        )}
+                        {cart.length > 0 && (
+                            <div className="fixed bottom-6 right-6 z-30">
+                                <button
+                                    onClick={() => setShowCartModal(true)}
+                                    className="bg-teal-500 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse"
+                                >
+                                    <svg
+                                        className="w-6 h-6 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                                        ></path>
+                                    </svg>
+                                    {cart.length} {t("itemsInCart")}
+                                </button>
+                            </div>
+                        )}
+                        {showCartModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+                                    <h3 className="text-2xl font-bold mb-4">
+                                        {t("yourCart")}
+                                    </h3>
+                                    <div className="space-y-2 mb-4 max-h-64 overflow-y-auto custom-scrollbar">
+                                        {cart.map((item) => (
+                                            <div
+                                                key={item.cartId}
+                                                className="flex justify-between items-center border-b pb-2"
+                                            >
+                                                <div>
+                                                    <p className="font-semibold">
+                                                        {item.name}
+                                                    </p>
+                                                    {item.selectedAddOns
+                                                        .length > 0 && (
+                                                        <ul className="text-xs text-gray-500 list-disc list-inside ml-2">
+                                                            {item.selectedAddOns.map(
+                                                                (ao) => (
+                                                                    <li
+                                                                        key={
+                                                                            ao.name
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            ao.name
+                                                                        }
+                                                                    </li>
+                                                                )
+                                                            )}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <p>
+                                                        Rp
+                                                        {(
+                                                            item.price +
+                                                            item.selectedAddOns.reduce(
+                                                                (s, ao) =>
+                                                                    s +
+                                                                    ao.price,
+                                                                0
+                                                            )
+                                                        ).toLocaleString(
+                                                            "id-ID"
+                                                        )}
+                                                    </p>
+                                                    <button
+                                                        onClick={() =>
+                                                            removeFromCart(
+                                                                item.cartId
+                                                            )
+                                                        }
+                                                        className="text-red-500 hover:text-red-700 font-bold"
+                                                    >
+                                                        {t("delete")}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t("additionalNotes")}
+                                        </label>
+                                        <textarea
+                                            value={orderDescription}
+                                            onChange={(e) =>
+                                                setOrderDescription(
+                                                    e.target.value
+                                                )
+                                            }
+                                            rows="2"
+                                            className="w-full p-2 border rounded"
+                                            placeholder={t(
+                                                "additionalNotesPlaceholder"
+                                            )}
+                                        ></textarea>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-xl mt-4">
+                                        <p>{t("total")}:</p>
+                                        <p>
+                                            Rp
+                                            {cart
+                                                .reduce(
+                                                    (sum, item) =>
+                                                        sum +
+                                                        item.price +
+                                                        item.selectedAddOns.reduce(
+                                                            (s, ao) =>
+                                                                s + ao.price,
+                                                            0
+                                                        ),
+                                                    0
+                                                )
+                                                .toLocaleString("id-ID")}
+                                        </p>
+                                    </div>
+                                    <div className="mt-6 flex justify-end space-x-2">
+                                        <button
+                                            onClick={() =>
+                                                setShowCartModal(false)
+                                            }
+                                            className="bg-gray-300 px-4 py-2 rounded"
+                                        >
+                                            {t("close")}
+                                        </button>
+                                        <button
+                                            onClick={placeOrder}
+                                            className="bg-green-600 text-white px-4 py-2 rounded"
+                                        >
+                                            {t("placeOrder")}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
-                </div>
-            );
-        }
+                );
+            }
 
-        function RoomChat() {
-            const { db, appId, loggedInRoom } = useContext(AppContext);
-            const [messages, setMessages] = useState([]);
-            const [newMessage, setNewMessage] = useState('');
-            const messagesEndRef = useRef(null);
+            function OrderHistory() {
+                const { db, appId, loggedInRoom } = useContext(AppContext);
+                const { t } = useTranslation();
+                const [orders, setOrders] = useState([]);
+                const [loading, setLoading] = useState(true);
+                const [showCancelModal, setShowCancelModal] = useState(false);
+                const [orderToCancel, setOrderToCancel] = useState(null);
 
-            useEffect(() => {
-                if (!db || !loggedInRoom) return;
-                const chatsRef = db.collection(`artifacts/${appId}/public/data/chats`).where('roomNumber', '==', loggedInRoom.name);
-                const unsubscribe = chatsRef.onSnapshot(snapshot => {
-                    const fetchedMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    fetchedMessages.sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
-                    setMessages(fetchedMessages);
-                });
-                return () => unsubscribe();
-            }, [db, appId, loggedInRoom]);
+                useEffect(() => {
+                    if (!db || !loggedInRoom) return;
+                    const ordersRef = collection(
+                        db,
+                        `artifacts/${appId}/public/data/orders`
+                    );
+                    const q = query(
+                        ordersRef,
+                        where("roomNumber", "==", loggedInRoom.name)
+                    );
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        const fetchedOrders = snapshot.docs.map((doc) => ({
+                            id: doc.id,
+                            ...doc.data(),
+                        }));
+                        fetchedOrders.sort(
+                            (a, b) =>
+                                b.timestamp.toDate() - a.timestamp.toDate()
+                        );
+                        setOrders(fetchedOrders);
+                        setLoading(false);
+                    });
+                    return () => unsubscribe();
+                }, [db, appId, loggedInRoom]);
 
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, [messages]);
+                const confirmCancelOrder = (orderId) => {
+                    setOrderToCancel(orderId);
+                    setShowCancelModal(true);
+                };
 
-            const handleSendMessage = async () => {
-                if (!newMessage.trim()) return;
-                await db.collection(`artifacts/${appId}/public/data/chats`).add({
-                    roomNumber: loggedInRoom.name,
-                    sender: loggedInRoom.name,
-                    message: newMessage.trim(),
-                    timestamp: new Date(),
-                    isReadByAdmin: false
-                });
-                setNewMessage('');
-            };
+                const handleCancelOrder = async () => {
+                    if (!orderToCancel) return;
+                    const orderRef = doc(
+                        db,
+                        `artifacts/${appId}/public/data/orders`,
+                        orderToCancel
+                    );
+                    await updateDoc(orderRef, { status: "Dibatalkan" });
+                    setShowCancelModal(false);
+                    setOrderToCancel(null);
+                };
 
-            return (
-                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[70vh]">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Chat dengan Admin</h2>
-                    <div className="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-                        {messages.map(msg => (
-                            <div key={msg.id} className={`flex mb-3 ${msg.sender === 'Admin' ? 'justify-start' : 'justify-end'}`}>
-                                <div className={`p-3 rounded-lg max-w-[70%] ${msg.sender === 'Admin' ? 'bg-gray-300 text-gray-800' : 'bg-blue-500 text-white'}`}>
-                                    <p className="font-bold">{msg.sender === 'Admin' ? 'Admin' : 'Anda'}</p>
-                                    <p>{msg.message}</p>
-                                    <span className="text-xs opacity-75 mt-1 block">{new Date(msg.timestamp.toDate()).toLocaleTimeString()}</span>
-                                </div>
+                if (loading) return <p>{t("loadingHistory")}...</p>;
+
+                return (
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-6">
+                            {t("yourOrderHistory")}
+                        </h2>
+                        {orders.length === 0 ? (
+                            <p>{t("noOrdersYet")}.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {orders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        className="border rounded-lg p-4"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <p className="font-bold">
+                                                    {t("order")} #
+                                                    {order.id.substring(0, 6)}
+                                                </p>
+                                                <p className="text-sm text-gray-500">
+                                                    {t("orderOn")}{" "}
+                                                    {new Date(
+                                                        order.timestamp.toDate()
+                                                    ).toLocaleString()}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className={`px-3 py-1 text-sm font-semibold rounded-full ${
+                                                    order.status === "Selesai"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : order.status ===
+                                                          "Dibatalkan"
+                                                        ? "bg-red-100 text-red-800"
+                                                        : "bg-yellow-100 text-yellow-800"
+                                                }`}
+                                            >
+                                                {t(`status_${order.status}`)}
+                                            </span>
+                                        </div>
+                                        <ul className="list-disc list-inside ml-4 mb-2 text-sm">
+                                            {order.items.map((item) => (
+                                                <li key={item.cartId}>
+                                                    {item.name}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="border-t pt-2 flex justify-between items-center">
+                                            <p className="font-bold text-lg">
+                                                {t("total")}: Rp
+                                                {order.total.toLocaleString(
+                                                    "id-ID"
+                                                )}
+                                            </p>
+                                            {(order.status === "Baru" ||
+                                                order.status ===
+                                                    "Diproses") && (
+                                                <button
+                                                    onClick={() =>
+                                                        confirmCancelOrder(
+                                                            order.id
+                                                        )
+                                                    }
+                                                    className="bg-red-500 text-white text-xs font-bold py-1 px-3 rounded hover:bg-red-600"
+                                                >
+                                                    {t("cancelOrder")}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    <div className="flex">
-                        <input 
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="flex-grow p-3 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ketik pesan Anda..."
+                        )}
+                        <ConfirmationModal
+                            show={showCancelModal}
+                            message={t("confirmCancel")}
+                            onConfirm={handleCancelOrder}
+                            onCancel={() => setShowCancelModal(false)}
                         />
-                        <button onClick={handleSendMessage} className="bg-blue-600 text-white px-6 rounded-r-md hover:bg-blue-700">Kirim</button>
                     </div>
-                </div>
-            );
-        }
+                );
+            }
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
-    </script>
-</body>
+            function ShipInfo() {
+                const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
+                const [schedule, setSchedule] = useState([]);
+                const [loading, setLoading] = useState(true);
+
+                useEffect(() => {
+                    if (!db) return;
+                    const scheduleRef = collection(
+                        db,
+                        `artifacts/${appId}/public/data/schedule`
+                    );
+                    const q = query(scheduleRef, orderBy("timeFrom"));
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        setSchedule(
+                            snapshot.docs.map((doc) => ({
+                                id: doc.id,
+                                ...doc.data(),
+                            }))
+                        );
+                        setLoading(false);
+                    });
+                    return () => unsubscribe();
+                }, [db, appId]);
+
+                if (loading) return <p>{t("loadingSchedule")}...</p>;
+
+                return (
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                            <svg
+                                className="w-8 h-8 mr-3 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                ></path>
+                            </svg>
+                            {t("shipSchedule")}
+                        </h2>
+                        <div className="space-y-4">
+                            {schedule.length === 0 ? (
+                                <p>{t("scheduleUnavailable")}.</p>
+                            ) : (
+                                schedule.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center p-4 bg-gray-50 rounded-lg"
+                                    >
+                                        <div className="w-40 text-lg font-bold text-blue-700">
+                                            {item.timeFrom} - {item.timeTo}
+                                        </div>
+                                        <div className="border-l-2 border-blue-200 pl-4">
+                                            <p className="font-semibold text-gray-800">
+                                                {item.event}
+                                            </p>
+                                            <p className="text-sm text-gray-500">
+                                                {item.location}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            function RoomChat() {
+                const { db, appId, loggedInRoom } = useContext(AppContext);
+                const { t } = useTranslation();
+                const [messages, setMessages] = useState([]);
+                const [newMessage, setNewMessage] = useState("");
+                const messagesEndRef = useRef(null);
+
+                useEffect(() => {
+                    if (!db || !loggedInRoom) return;
+                    const chatsRef = collection(
+                        db,
+                        `artifacts/${appId}/public/data/chats`
+                    );
+                    // Query without orderBy to avoid composite index requirement
+                    const q = query(
+                        chatsRef,
+                        where("roomNumber", "==", loggedInRoom.name)
+                    );
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        const fetchedMessages = snapshot.docs.map((doc) => ({
+                            id: doc.id,
+                            ...doc.data(),
+                        }));
+                        // Sort messages by timestamp on the client side
+                        fetchedMessages.sort((a, b) => {
+                            const timeA = a.timestamp
+                                ? a.timestamp.toDate()
+                                : new Date(0);
+                            const timeB = b.timestamp
+                                ? b.timestamp.toDate()
+                                : new Date(0);
+                            return timeA - timeB;
+                        });
+                        setMessages(fetchedMessages);
+                    });
+                    return () => unsubscribe();
+                }, [db, appId, loggedInRoom]);
+
+                useEffect(() => {
+                    messagesEndRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                    });
+                }, [messages]);
+
+                const handleSendMessage = async () => {
+                    if (!newMessage.trim()) return;
+                    await addDoc(
+                        collection(db, `artifacts/${appId}/public/data/chats`),
+                        {
+                            roomNumber: loggedInRoom.name,
+                            sender: loggedInRoom.name,
+                            message: newMessage.trim(),
+                            timestamp: serverTimestamp(),
+                            isReadByAdmin: false,
+                        }
+                    );
+                    setNewMessage("");
+                };
+
+                return (
+                    <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[70vh]">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-6">
+                            {t("chatWithAdmin")}
+                        </h2>
+                        <div className="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50 custom-scrollbar">
+                            {messages.map((msg) => (
+                                <div
+                                    key={msg.id}
+                                    className={`flex mb-3 ${
+                                        msg.sender === "Admin"
+                                            ? "justify-start"
+                                            : "justify-end"
+                                    }`}
+                                >
+                                    <div
+                                        className={`p-3 rounded-lg max-w-[70%] ${
+                                            msg.sender === "Admin"
+                                                ? "bg-gray-300 text-gray-800"
+                                                : "bg-blue-500 text-white"
+                                        }`}
+                                    >
+                                        <p className="font-bold text-sm">
+                                            {msg.sender === "Admin"
+                                                ? t("admin")
+                                                : t("you")}
+                                        </p>
+                                        <p>{msg.message}</p>
+                                        <span className="text-xs opacity-75 mt-1 block">
+                                            {msg.timestamp
+                                                ? new Date(
+                                                      msg.timestamp.toDate()
+                                                  ).toLocaleTimeString()
+                                                : "sending..."}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <div className="flex">
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyPress={(e) =>
+                                    e.key === "Enter" && handleSendMessage()
+                                }
+                                className="flex-grow p-3 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder={t("typeYourMessage")}
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                className="bg-blue-600 text-white px-6 rounded-r-md hover:bg-blue-700"
+                            >
+                                {t("send")}
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const container = document.getElementById("root");
+            const root = ReactDOM.createRoot(container);
+            root.render(
+                <LanguageProvider>
+                    <App />
+                </LanguageProvider>
+            );
+        </script>
+    </body>
 </html>
