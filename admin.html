@@ -3,12 +3,13 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Admin - Sistem Kabin Kapal</title>
+        <title>Admin Panel - Sistem Kabin Kapal</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
             rel="stylesheet"
         />
+        <!-- React & Babel CDN -->
         <script
             src="https://unpkg.com/react@18/umd/react.development.js"
             crossorigin
@@ -18,6 +19,7 @@
             crossorigin
         ></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <!-- Firebase Compat SDKs -->
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -46,43 +48,240 @@
             // ----------------------------------------------------
             window.__firebase_config = JSON.stringify(firebaseConfig);
             window.__app_id = firebaseConfig.appId;
-            window.__initial_auth_token = null;
         </script>
 
         <script type="text/babel">
-            const { initializeApp } = firebase;
-            const { onAuthStateChanged } = firebase.auth;
+            // --- React Hooks ---
             const { useState, useEffect, createContext, useContext, useRef } =
                 React;
 
+            // --- Contexts ---
             const AppContext = createContext();
+            const LanguageContext = createContext();
 
-            function ConfirmationModal({ message, onConfirm, onCancel, show }) {
-                if (!show) return null;
+            // --- Translation System ---
+            const translations = {
+                en: {
+                    adminPanelTitle: "🚢 Admin Panel",
+                    passwordPlaceholder: "Enter Password",
+                    login: "Login",
+                    wrongPassword: "Wrong password.",
+                    captainPanel: "Captain's Panel",
+                    roomCalls: "Room Calls",
+                    manageOrders: "Manage Orders",
+                    manageMenu: "Manage Menu",
+                    manageRooms: "Manage Rooms",
+                    manageShipInfo: "Manage Ship Info",
+                    manageChat: "Manage Chat",
+                    logout: "Logout",
+                    callsFromRoom: "Calls from Room",
+                    noCurrentCalls: "No current calls.",
+                    emergencyCall: "Emergency Call!",
+                    needsAssistance: "needs assistance.",
+                    markAsDone: "Mark as Done",
+                    all: "All",
+                    new: "New",
+                    processing: "Processing",
+                    completed: "Completed",
+                    cancelled: "Cancelled",
+                    noOrdersWithStatus: "No orders with status",
+                    orderFromRoom: "Order from Room",
+                    notes: "Notes:",
+                    total: "Total:",
+                    status: "Status:",
+                    addNewRoom: "Add New Room",
+                    roomName: "Room Name (e.g., ROOM 11)",
+                    title: "Title",
+                    displayName: "Display Name (e.g., Jasmine Room)",
+                    addRoom: "Add Room",
+                    roomList: "Room List",
+                    displayLabel: "Display Name:",
+                    notSet: "(Not set)",
+                    edit: "Edit",
+                    delete: "Delete",
+                    editRoomDetails: "Edit Room Details",
+                    enterNewName: "Enter new name",
+                    cancel: "Cancel",
+                    save: "Save",
+                    confirmDeleteRoom: "Are you sure you want to delete room",
+                    thisActionCannotBeUndone: "This action cannot be undone.",
+                    addNewMenuItem: "Add New Menu Item",
+                    editMenuItem: "Edit Menu Item",
+                    itemNamePlaceholder: "Item Name (e.g., Fried Noodles)",
+                    pricePlaceholder: "Price (0 for Free)",
+                    descriptionPlaceholder: "Description (Optional)",
+                    category: "Category",
+                    addons: "Add-ons",
+                    addonNamePlaceholder: "Add-on Name (e.g., Egg)",
+                    addonPricePlaceholder: "Add-on Price",
+                    addAddon: "Add Add-on",
+                    saveChanges: "Save Changes",
+                    addItem: "Add Item",
+                    menuList: "Menu List",
+                    confirmDeleteItem:
+                        "Are you sure you want to delete the item",
+                    manageShipInfoAndSchedule: "Manage Ship Info & Schedule",
+                    addNewSchedule: "Add New Schedule",
+                    editSchedule: "Edit Schedule",
+                    eventTime: "Event Time",
+                    eventName: "Event Name",
+                    location: "Location",
+                    addSchedule: "Add Schedule",
+                    currentScheduleList: "Current Schedule List",
+                    confirmDeleteSchedule:
+                        "Are you sure you want to delete the schedule",
+                    messagesFromRoom: "Messages from Room",
+                    chooseRoomToSeeConversation:
+                        "Choose a room to see the conversation.",
+                    chatWithRoom: "Chat with Room",
+                    clearChat: "Clear Chat",
+                    typeReply: "Type a reply...",
+                    send: "Send",
+                    confirmClearChat:
+                        "Are you sure you want to delete all chats from Room",
+                    newOrderNotification: "New Order!",
+                    roomOrdered: "Room",
+                    status_Baru: "New",
+                    status_Diproses: "Processing",
+                    status_Selesai: "Completed",
+                    status_Dibatalkan: "Cancelled",
+                    notifications: "Notifications",
+                    noNewNotifications: "No new notifications.",
+                },
+                id: {
+                    adminPanelTitle: "🚢 Panel Admin",
+                    passwordPlaceholder: "Masukkan Kata Sandi",
+                    login: "Masuk",
+                    wrongPassword: "Kata sandi salah.",
+                    captainPanel: "Panel Kapten",
+                    roomCalls: "Panggilan Kamar",
+                    manageOrders: "Kelola Pesanan",
+                    manageMenu: "Kelola Menu",
+                    manageRooms: "Kelola Kamar",
+                    manageShipInfo: "Kelola Info Kapal",
+                    manageChat: "Kelola Chat",
+                    logout: "Logout",
+                    callsFromRoom: "Panggilan dari Kamar",
+                    noCurrentCalls: "Tidak ada panggilan saat ini.",
+                    emergencyCall: "Panggilan Darurat!",
+                    needsAssistance: "membutuhkan bantuan.",
+                    markAsDone: "Tandai Selesai",
+                    all: "Semua",
+                    new: "Baru",
+                    processing: "Diproses",
+                    completed: "Selesai",
+                    cancelled: "Dibatalkan",
+                    noOrdersWithStatus: "Tidak ada pesanan dengan status",
+                    orderFromRoom: "Pesanan dari Kamar",
+                    notes: "Catatan:",
+                    total: "Total:",
+                    status: "Status:",
+                    addNewRoom: "Tambah Kamar Baru",
+                    roomName: "Nama Kamar (e.g., KAMAR 11)",
+                    title: "Gelar",
+                    displayName: "Nama Tampilan (e.g., Kamar Melati)",
+                    addRoom: "Tambah Kamar",
+                    roomList: "Daftar Kamar",
+                    displayLabel: "Nama Tampilan:",
+                    notSet: "(Belum diatur)",
+                    edit: "Ubah",
+                    delete: "Hapus",
+                    editRoomDetails: "Ubah Detail Kamar",
+                    enterNewName: "Masukkan nama baru",
+                    cancel: "Batal",
+                    save: "Simpan",
+                    confirmDeleteRoom: "Anda yakin ingin menghapus kamar",
+                    thisActionCannotBeUndone:
+                        "Tindakan ini tidak dapat dibatalkan.",
+                    addNewMenuItem: "Tambah Item Menu Baru",
+                    editMenuItem: "Ubah Item Menu",
+                    itemNamePlaceholder: "Nama Item (e.g., Indomie Goreng)",
+                    pricePlaceholder: "Harga (0 untuk Gratis)",
+                    descriptionPlaceholder: "Deskripsi (Opsional)",
+                    category: "Kategori",
+                    addons: "Add-ons",
+                    addonNamePlaceholder: "Nama Add-on (e.g., Telur)",
+                    addonPricePlaceholder: "Harga Add-on",
+                    addAddon: "Tambah Add-on",
+                    saveChanges: "Simpan Perubahan",
+                    addItem: "Tambah Item",
+                    menuList: "Daftar Menu",
+                    confirmDeleteItem: "Anda yakin ingin menghapus item",
+                    manageShipInfoAndSchedule: "Kelola Info & Jadwal Kapal",
+                    addNewSchedule: "Tambah Jadwal Baru",
+                    editSchedule: "Ubah Jadwal",
+                    eventTime: "Waktu Acara",
+                    eventName: "Nama Acara",
+                    location: "Lokasi",
+                    addSchedule: "Tambah Jadwal",
+                    currentScheduleList: "Daftar Jadwal Saat Ini",
+                    confirmDeleteSchedule: "Anda yakin ingin menghapus jadwal",
+                    messagesFromRoom: "Pesan dari Kamar",
+                    chooseRoomToSeeConversation:
+                        "Pilih kamar untuk melihat percakapan.",
+                    chatWithRoom: "Chat dengan Kamar",
+                    clearChat: "Bersihkan Chat",
+                    typeReply: "Ketik balasan...",
+                    send: "Kirim",
+                    confirmClearChat:
+                        "Anda yakin ingin menghapus semua chat dari Kamar",
+                    newOrderNotification: "Pesanan Baru!",
+                    roomOrdered: "Kamar",
+                    status_Baru: "Baru",
+                    status_Diproses: "Diproses",
+                    status_Selesai: "Selesai",
+                    status_Dibatalkan: "Dibatalkan",
+                    notifications: "Notifikasi",
+                    noNewNotifications: "Tidak ada notifikasi baru.",
+                },
+            };
+
+            function LanguageProvider({ children }) {
+                const [language, setLanguage] = useState("id");
+                const t = (key) => translations[language][key] || key;
                 return (
-                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
-                            <p className="text-lg text-gray-800 mb-6">
-                                {message}
-                            </p>
-                            <div className="flex justify-center space-x-4">
-                                <button
-                                    onClick={onCancel}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={onConfirm}
-                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-                                >
-                                    Konfirmasi
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <LanguageContext.Provider
+                        value={{ language, setLanguage, t }}
+                    >
+                        {children}
+                    </LanguageContext.Provider>
                 );
             }
+            function useTranslation() {
+                return useContext(LanguageContext);
+            }
+
+            const FlagUK = () => (
+                <svg className="w-6 h-6" viewBox="0 0 60 30">
+                    <clipPath id="a">
+                        <path d="M0 0v30h60V0z" />
+                    </clipPath>
+                    <path d="M0 0v30h60V0z" fill="#012169" />
+                    <path
+                        d="M0 0l60 30m0-30L0 30"
+                        stroke="#fff"
+                        strokeWidth="6"
+                    />
+                    <path
+                        d="M0 0l60 30m0-30L0 30"
+                        clipPath="url(#a)"
+                        stroke="#C8102E"
+                        strokeWidth="4"
+                    />
+                    <path d="M30 0v30M0 15h60" stroke="#fff" strokeWidth="10" />
+                    <path
+                        d="M30 0v30M0 15h60"
+                        stroke="#C8102E"
+                        strokeWidth="6"
+                    />
+                </svg>
+            );
+            const FlagIndonesia = () => (
+                <svg className="w-6 h-6" viewBox="0 0 900 600">
+                    <path fill="#e70011" d="M0 0h900v300H0z" />
+                    <path fill="#fff" d="M0 300h900v300H0z" />
+                </svg>
+            );
 
             function App() {
                 const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -92,26 +291,24 @@
 
                 useEffect(() => {
                     try {
-                        const config = JSON.parse(window.__firebase_config);
-                        if (!config || config.apiKey === "YOUR_API_KEY") {
-                            setError(
-                                "Konfigurasi Firebase belum diatur. Harap edit file HTML ini dan masukkan kredensial Firebase Anda."
-                            );
+                        const config = JSON.parse(
+                            window.__firebase_config || "{}"
+                        );
+                        if (!config.apiKey) {
+                            setError("Konfigurasi Firebase tidak ditemukan.");
                             setLoading(false);
                             return;
                         }
-                        const app = initializeApp(config);
-                        setDb(firebase.firestore(app));
+                        const app = firebase.initializeApp(config);
                         const auth = firebase.auth(app);
+                        setDb(firebase.firestore(app));
                         auth.signInAnonymously().catch((err) =>
-                            console.error("Gagal login anonim:", err)
+                            console.error("Anonymous sign-in failed:", err)
                         );
                         setLoading(false);
                     } catch (e) {
                         console.error("Error inisialisasi Firebase:", e);
-                        setError(
-                            "Gagal memuat Firebase. Periksa konsol untuk detail."
-                        );
+                        setError("Gagal memuat Firebase. Periksa konsol.");
                         setLoading(false);
                     }
                 }, []);
@@ -130,33 +327,37 @@
                     );
 
                 return (
-                    <AppContext.Provider value={{ db, appId: window.__app_id }}>
-                        {isAdminLoggedIn ? (
-                            <AdminDashboard
-                                onLogout={() => setIsAdminLoggedIn(false)}
-                            />
-                        ) : (
-                            <AdminLogin
-                                onLogin={() => setIsAdminLoggedIn(true)}
-                            />
-                        )}
-                    </AppContext.Provider>
+                    <LanguageProvider>
+                        <AppContext.Provider
+                            value={{ db, appId: window.__app_id }}
+                        >
+                            {isAdminLoggedIn ? (
+                                <AdminDashboard
+                                    onLogout={() => setIsAdminLoggedIn(false)}
+                                />
+                            ) : (
+                                <AdminLogin
+                                    onLogin={() => setIsAdminLoggedIn(true)}
+                                />
+                            )}
+                        </AppContext.Provider>
+                    </LanguageProvider>
                 );
             }
 
             function AdminLogin({ onLogin }) {
                 const [password, setPassword] = useState("");
                 const [error, setError] = useState("");
+                const { t } = useTranslation();
 
                 const handleLogin = async () => {
                     if (password === "admin123") {
                         if (Tone.context.state !== "running") {
                             await Tone.start();
-                            console.log("Audio context started on login.");
                         }
                         onLogin();
                     } else {
-                        setError("Kata sandi salah.");
+                        setError(t("wrongPassword"));
                     }
                 };
 
@@ -164,7 +365,7 @@
                     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
                         <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
                             <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
-                                🚢 Panel Admin
+                                {t("adminPanelTitle")}
                             </h2>
                             {error && (
                                 <p className="text-red-500 text-center mb-4">
@@ -173,7 +374,7 @@
                             )}
                             <input
                                 type="password"
-                                placeholder="Masukkan Kata Sandi"
+                                placeholder={t("passwordPlaceholder")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onKeyPress={(e) =>
@@ -185,14 +386,43 @@
                                 onClick={handleLogin}
                                 className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300"
                             >
-                                Masuk
+                                {t("login")}
                             </button>
                         </div>
                     </div>
                 );
             }
 
+            function ConfirmationModal({ message, onConfirm, onCancel, show }) {
+                const { t } = useTranslation();
+                if (!show) return null;
+                return (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                            <p className="text-lg text-gray-800 mb-6">
+                                {message}
+                            </p>
+                            <div className="flex justify-center space-x-4">
+                                <button
+                                    onClick={onCancel}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {t("cancel")}
+                                </button>
+                                <button
+                                    onClick={onConfirm}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {t("confirm")}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
             function AdminDashboard({ onLogout }) {
+                const { t, language, setLanguage } = useTranslation();
                 const [activeTab, setActiveTab] = useState("panggilan");
                 const { db, appId } = useContext(AppContext);
                 const [callingRooms, setCallingRooms] = useState([]);
@@ -204,6 +434,8 @@
                 const [orderNotifications, setOrderNotifications] = useState(
                     []
                 );
+                const [isNotificationOpen, setIsNotificationOpen] =
+                    useState(false);
 
                 const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
                 const alarmSynth = useRef(null);
@@ -213,23 +445,26 @@
                 const prevUnreadCount = useRef(0);
 
                 useEffect(() => {
-                    alarmSynth.current = new Tone.Synth({
-                        oscillator: { type: "square" },
-                    }).toDestination();
-                    chatSynth.current = new Tone.Synth().toDestination();
-                    orderSynth.current = new Tone.Synth().toDestination();
-                    alarmLoop.current = new Tone.Loop((time) => {
-                        alarmSynth.current.triggerAttackRelease(
-                            "A5",
-                            "16n",
-                            time
-                        );
-                    }, "4n");
-
+                    const setupAudio = async () => {
+                        if (Tone.context.state !== "running")
+                            await Tone.start();
+                        alarmSynth.current = new Tone.Synth({
+                            oscillator: { type: "square" },
+                        }).toDestination();
+                        chatSynth.current = new Tone.Synth().toDestination();
+                        orderSynth.current = new Tone.Synth().toDestination();
+                        alarmLoop.current = new Tone.Loop((time) => {
+                            alarmSynth.current.triggerAttackRelease(
+                                "A5",
+                                "16n",
+                                time
+                            );
+                        }, "4n");
+                    };
+                    setupAudio();
                     return () => {
-                        if (Tone.Transport.state === "started") {
+                        if (Tone.Transport.state === "started")
                             Tone.Transport.stop();
-                        }
                         alarmLoop.current?.dispose();
                     };
                 }, []);
@@ -270,46 +505,45 @@
 
                 useEffect(() => {
                     if (!db) return;
-
                     const roomsRef = db.collection(
                         `artifacts/${appId}/public/data/rooms`
                     );
                     const qRooms = roomsRef.where("isCalling", "==", true);
-                    const unsubRooms = qRooms.onSnapshot((snapshot) => {
+                    const unsubRooms = qRooms.onSnapshot((snapshot) =>
                         setCallingRooms(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
+                            snapshot.docs.map((d) => ({
+                                id: d.id,
+                                ...d.data(),
                             }))
-                        );
-                    });
+                        )
+                    );
 
                     const chatsRef = db.collection(
                         `artifacts/${appId}/public/data/chats`
                     );
                     const qChats = chatsRef.where("isReadByAdmin", "==", false);
-                    const unsubChats = qChats.onSnapshot((snapshot) => {
-                        const roomsWithUnreadMessages = new Set(
-                            snapshot.docs
-                                .filter((doc) => doc.data().sender !== "Admin")
-                                .map((doc) => doc.data().roomNumber)
-                        );
-                        setUnreadChatRooms(roomsWithUnreadMessages);
-                    });
+                    const unsubChats = qChats.onSnapshot((snapshot) =>
+                        setUnreadChatRooms(
+                            new Set(
+                                snapshot.docs
+                                    .filter(
+                                        (doc) => doc.data().sender !== "Admin"
+                                    )
+                                    .map((doc) => doc.data().roomNumber)
+                            )
+                        )
+                    );
 
                     const ordersRef = db.collection(
                         `artifacts/${appId}/public/data/orders`
                     );
                     const qOrders = ordersRef.orderBy("timestamp", "desc");
                     const unsubOrders = qOrders.onSnapshot((snapshot) => {
-                        let newCount = 0;
-                        snapshot.docs.forEach((doc) => {
-                            if (doc.data().status === "Baru") {
-                                newCount++;
-                            }
-                        });
-                        setNewOrdersCount(newCount);
-
+                        setNewOrdersCount(
+                            snapshot.docs.filter(
+                                (doc) => doc.data().status === "Baru"
+                            ).length
+                        );
                         let hasNewOrder = false;
                         snapshot.docChanges().forEach((change) => {
                             if (
@@ -317,24 +551,18 @@
                                 change.doc.data().status === "Baru"
                             ) {
                                 hasNewOrder = true;
-                                const newOrder = {
-                                    id: change.doc.id,
-                                    ...change.doc.data(),
-                                };
                                 setOrderNotifications((prev) => [
                                     ...prev,
-                                    newOrder,
+                                    { id: change.doc.id, ...change.doc.data() },
                                 ]);
                             }
                         });
-
                         if (
                             hasNewOrder &&
                             orderSynth.current &&
                             Tone.context.state === "running"
-                        ) {
+                        )
                             orderSynth.current.triggerAttackRelease("E5", "8n");
-                        }
                     });
 
                     return () => {
@@ -344,171 +572,190 @@
                     };
                 }, [db, appId]);
 
-                const handleReadChat = (roomNumber) => {
+                const handleReadChat = async (roomNumber) => {
                     const chatsRef = db.collection(
                         `artifacts/${appId}/public/data/chats`
                     );
                     const q = chatsRef.where("roomNumber", "==", roomNumber);
-                    q.get().then((snapshot) => {
-                        const batch = db.batch();
-                        snapshot.docs.forEach((doc) => {
-                            if (
-                                doc.data().isReadByAdmin === false &&
-                                doc.data().sender !== "Admin"
-                            ) {
-                                batch.update(doc.ref, { isReadByAdmin: true });
-                            }
-                        });
-                        batch
-                            .commit()
-                            .catch((err) =>
-                                console.error(
-                                    "Error marking chat as read:",
-                                    err
-                                )
-                            );
+                    const snapshot = await q.get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach((d) => {
+                        if (d.data().sender !== "Admin") {
+                            batch.update(d.ref, { isReadByAdmin: true });
+                        }
                     });
+                    await batch
+                        .commit()
+                        .catch((err) =>
+                            console.error("Error marking chat as read:", err)
+                        );
                 };
 
-                const closeNotification = (orderId) => {
+                const closeNotification = (orderId) =>
                     setOrderNotifications((prev) =>
                         prev.filter((n) => n.id !== orderId)
                     );
-                };
-
-                const Sidebar = () => (
-                    <aside
-                        className={`w-64 bg-gray-800 text-white flex flex-col transition-transform duration-300 ease-in-out ${
-                            isSidebarOpen
-                                ? "translate-x-0"
-                                : "-translate-x-full"
-                        } md:translate-x-0 fixed md:relative h-full z-20`}
-                    >
-                        <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                            <h1 className="text-2xl font-bold">Panel Kapten</h1>
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="md:hidden text-white p-2"
-                            >
-                                <svg
-                                    className="w-6 h-6"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    ></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <nav className="flex-grow">
-                            <button
-                                onClick={() => {
-                                    setActiveTab("panggilan");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
-                                    activeTab === "panggilan"
-                                        ? "bg-blue-600"
-                                        : ""
-                                }`}
-                            >
-                                <span>Panggilan Kamar</span>
-                                {callingRooms.length > 0 && (
-                                    <span className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
-                                        {callingRooms.length}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("pesanan");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
-                                    activeTab === "pesanan" ? "bg-blue-600" : ""
-                                }`}
-                            >
-                                <span>Kelola Pesanan</span>
-                                {newOrdersCount > 0 && (
-                                    <span className="bg-blue-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                        {newOrdersCount}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("menu");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 ${
-                                    activeTab === "menu" ? "bg-blue-600" : ""
-                                }`}
-                            >
-                                Kelola Menu
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("kamar");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 ${
-                                    activeTab === "kamar" ? "bg-blue-600" : ""
-                                }`}
-                            >
-                                Kelola Kamar
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("info");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 ${
-                                    activeTab === "info" ? "bg-blue-600" : ""
-                                }`}
-                            >
-                                Kelola Info Kapal
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("chat");
-                                    setIsSidebarOpen(false);
-                                }}
-                                className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
-                                    activeTab === "chat" ? "bg-blue-600" : ""
-                                }`}
-                            >
-                                <span>Kelola Chat</span>
-                                {unreadChatRooms.size > 0 && (
-                                    <span className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                        {unreadChatRooms.size}
-                                    </span>
-                                )}
-                            </button>
-                        </nav>
-                        <div className="p-4 border-t border-gray-700">
-                            <button
-                                onClick={onLogout}
-                                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    </aside>
-                );
 
                 return (
                     <div className="flex h-screen bg-gray-200">
-                        <Sidebar />
+                        <aside
+                            className={`w-64 bg-gray-800 text-white flex flex-col transition-transform duration-300 ease-in-out ${
+                                isSidebarOpen
+                                    ? "translate-x-0"
+                                    : "-translate-x-full"
+                            } md:translate-x-0 fixed md:relative h-full z-20`}
+                        >
+                            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+                                <h1 className="text-2xl font-bold">
+                                    {t("captainPanel")}
+                                </h1>
+                                <button
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    className="md:hidden text-white p-2"
+                                >
+                                    <svg
+                                        className="w-6 h-6"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        ></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <nav className="flex-grow">
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("panggilan");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
+                                        activeTab === "panggilan"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    <span>{t("roomCalls")}</span>
+                                    {callingRooms.length > 0 && (
+                                        <span className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+                                            {callingRooms.length}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("pesanan");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
+                                        activeTab === "pesanan"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    <span>{t("manageOrders")}</span>
+                                    {newOrdersCount > 0 && (
+                                        <span className="bg-blue-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                            {newOrdersCount}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("menu");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 ${
+                                        activeTab === "menu"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    {t("manageMenu")}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("kamar");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 ${
+                                        activeTab === "kamar"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    {t("manageRooms")}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("info");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 ${
+                                        activeTab === "info"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    {t("manageShipInfo")}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab("chat");
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 hover:bg-gray-700 flex items-center justify-between ${
+                                        activeTab === "chat"
+                                            ? "bg-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    <span>{t("manageChat")}</span>
+                                    {unreadChatRooms.size > 0 && (
+                                        <span className="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                            {unreadChatRooms.size}
+                                        </span>
+                                    )}
+                                </button>
+                            </nav>
+                            <div className="p-4 border-t border-gray-700 space-y-2">
+                                <button
+                                    onClick={() =>
+                                        setLanguage((lang) =>
+                                            lang === "id" ? "en" : "id"
+                                        )
+                                    }
+                                    className="w-full flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    {language === "id" ? (
+                                        <FlagUK />
+                                    ) : (
+                                        <FlagIndonesia />
+                                    )}
+                                    <span>
+                                        {language === "id"
+                                            ? "English"
+                                            : "Indonesia"}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={onLogout}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    {t("logout")}
+                                </button>
+                            </div>
+                        </aside>
                         <div className="flex-1 flex flex-col">
-                            <header className="bg-white shadow-md p-4 md:hidden flex justify-between items-center">
+                            <header className="bg-white shadow-md p-4 flex justify-between items-center">
                                 <button
                                     onClick={() => setIsSidebarOpen(true)}
-                                    className="text-gray-700"
+                                    className="text-gray-700 md:hidden"
                                 >
                                     <svg
                                         className="w-6 h-6"
@@ -525,9 +772,117 @@
                                         ></path>
                                     </svg>
                                 </button>
-                                <h2 className="text-xl font-bold capitalize">
-                                    {activeTab.replace("-", " ")}
+                                <h2 className="text-xl font-bold capitalize md:hidden">
+                                    {t(activeTab.replace("-", " "))}
                                 </h2>
+                                <div className="relative ml-auto">
+                                    <button
+                                        onClick={() =>
+                                            setIsNotificationOpen(
+                                                (prev) => !prev
+                                            )
+                                        }
+                                        className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                                    >
+                                        <svg
+                                            className="w-6 h-6 text-gray-600"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                            ></path>
+                                        </svg>
+                                        {orderNotifications.length > 0 && (
+                                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                                {orderNotifications.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                    {isNotificationOpen && (
+                                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-20">
+                                            <div className="p-4 font-bold border-b">
+                                                {t("notifications")}
+                                            </div>
+                                            <div className="max-h-96 overflow-y-auto">
+                                                {orderNotifications.length >
+                                                0 ? (
+                                                    orderNotifications.map(
+                                                        (order) => (
+                                                            <div
+                                                                key={order.id}
+                                                                className="p-4 border-b hover:bg-gray-50 flex items-start"
+                                                            >
+                                                                <div className="ml-3 flex-1">
+                                                                    <p className="font-bold text-sm text-gray-800">
+                                                                        {t(
+                                                                            "newOrderNotification"
+                                                                        )}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-600">
+                                                                        {t(
+                                                                            "roomOrdered"
+                                                                        )}{" "}
+                                                                        {
+                                                                            order.roomNumber
+                                                                        }{" "}
+                                                                        memesan{" "}
+                                                                        {
+                                                                            order
+                                                                                .items[0]
+                                                                                .name
+                                                                        }
+                                                                        ...
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-400 mt-1">
+                                                                        {order.timestamp
+                                                                            ? new Date(
+                                                                                  order.timestamp.toDate()
+                                                                              ).toLocaleTimeString()
+                                                                            : ""}
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(
+                                                                        e
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        closeNotification(
+                                                                            order.id
+                                                                        );
+                                                                    }}
+                                                                    className="ml-2 p-1 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                                                                >
+                                                                    <svg
+                                                                        className="w-4 h-4"
+                                                                        fill="currentColor"
+                                                                        viewBox="0 0 20 20"
+                                                                    >
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                                            clipRule="evenodd"
+                                                                        ></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        )
+                                                    )
+                                                ) : (
+                                                    <p className="p-4 text-sm text-gray-500">
+                                                        {t(
+                                                            "noNewNotifications"
+                                                        )}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </header>
                             <main className="flex-1 p-4 md:p-8 overflow-y-auto">
                                 {activeTab === "panggilan" && (
@@ -549,52 +904,27 @@
                                 )}
                             </main>
                         </div>
-                        <div className="fixed bottom-4 right-4 space-y-2 z-30">
-                            {orderNotifications.map((order) => (
-                                <div
-                                    key={order.id}
-                                    className="bg-blue-600 text-white p-4 rounded-lg shadow-lg flex items-start"
-                                >
-                                    <div>
-                                        <p className="font-bold">
-                                            Pesanan Baru!
-                                        </p>
-                                        <p>
-                                            Kamar {order.roomNumber} memesan{" "}
-                                            {order.items[0].name}...
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            closeNotification(order.id)
-                                        }
-                                        className="ml-4 text-blue-200 hover:text-white"
-                                    >
-                                        &times;
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 );
             }
 
             function ManageCalls({ callingRooms }) {
                 const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
                 const handleAcknowledge = async (roomId) => {
-                    const roomRef = db.doc(
-                        `artifacts/${appId}/public/data/rooms/${roomId}`
-                    );
+                    const roomRef = db
+                        .collection(`artifacts/${appId}/public/data/rooms`)
+                        .doc(roomId);
                     await roomRef.update({ isCalling: false });
                 };
                 return (
                     <div>
                         <h2 className="text-3xl font-bold mb-6">
-                            Panggilan dari Kamar
+                            {t("callsFromRoom")}
                         </h2>
                         {callingRooms.length === 0 ? (
                             <p className="text-gray-600">
-                                Tidak ada panggilan saat ini.
+                                {t("noCurrentCalls")}
                             </p>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -604,14 +934,14 @@
                                         className="bg-red-100 border-2 border-red-500 rounded-lg p-6 shadow-lg animate-pulse"
                                     >
                                         <h3 className="text-2xl font-bold text-red-800">
-                                            Panggilan Darurat!
+                                            {t("emergencyCall")}
                                         </h3>
                                         <p className="text-red-700 mt-2 text-lg">
                                             Kamar{" "}
                                             <span className="font-bold">
                                                 {room.displayName || room.name}
                                             </span>{" "}
-                                            membutuhkan bantuan.
+                                            {t("needsAssistance")}
                                         </p>
                                         <button
                                             onClick={() =>
@@ -619,7 +949,7 @@
                                             }
                                             className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
                                         >
-                                            Tandai Selesai
+                                            {t("markAsDone")}
                                         </button>
                                     </div>
                                 ))}
@@ -631,35 +961,38 @@
 
             function ManageOrders({ onUpdateStatus }) {
                 const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
                 const [orders, setOrders] = useState([]);
                 const [loading, setLoading] = useState(true);
                 const [filter, setFilter] = useState("Semua");
 
                 useEffect(() => {
                     if (!db) return;
-                    const ordersRef = db
-                        .collection(`artifacts/${appId}/public/data/orders`)
-                        .orderBy("timestamp", "desc");
+                    const ordersRef = db.collection(
+                        `artifacts/${appId}/public/data/orders`
+                    );
                     const unsubscribe = ordersRef.onSnapshot((snapshot) => {
-                        setOrders(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
-                            }))
+                        const fetchedOrders = snapshot.docs.map((d) => ({
+                            id: d.id,
+                            ...d.data(),
+                        }));
+                        fetchedOrders.sort(
+                            (a, b) =>
+                                (b.timestamp?.seconds || 0) -
+                                (a.timestamp?.seconds || 0)
                         );
+                        setOrders(fetchedOrders);
                         setLoading(false);
                     });
                     return () => unsubscribe();
                 }, [db, appId]);
 
                 const updateOrderStatus = async (orderId, newStatus) => {
-                    const orderRef = db.doc(
-                        `artifacts/${appId}/public/data/orders/${orderId}`
-                    );
+                    const orderRef = db
+                        .collection(`artifacts/${appId}/public/data/orders`)
+                        .doc(orderId);
                     await orderRef.update({ status: newStatus });
-                    if (newStatus !== "Baru") {
-                        onUpdateStatus(orderId);
-                    }
+                    if (newStatus !== "Baru") onUpdateStatus(orderId);
                 };
 
                 const filteredOrders = orders.filter(
@@ -671,7 +1004,7 @@
                 return (
                     <div>
                         <h2 className="text-3xl font-bold mb-6">
-                            Kelola Pesanan
+                            {t("manageOrders")}
                         </h2>
                         <div className="flex flex-wrap gap-2 mb-4">
                             {[
@@ -690,14 +1023,24 @@
                                             : "bg-white"
                                     }`}
                                 >
-                                    {status}
+                                    {t(
+                                        status === "Semua"
+                                            ? "all"
+                                            : `status_${status}`
+                                    )}
                                 </button>
                             ))}
                         </div>
                         <div className="space-y-4">
                             {filteredOrders.length === 0 ? (
                                 <p>
-                                    Tidak ada pesanan dengan status "{filter}".
+                                    {t("noOrdersWithStatus")} "
+                                    {t(
+                                        filter === "Semua"
+                                            ? "all"
+                                            : `status_${filter}`
+                                    )}
+                                    ".
                                 </p>
                             ) : (
                                 filteredOrders.map((order) => (
@@ -707,13 +1050,15 @@
                                     >
                                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2">
                                             <h3 className="font-bold text-lg">
-                                                Pesanan dari Kamar{" "}
+                                                {t("orderFromRoom")}{" "}
                                                 {order.roomNumber}
                                             </h3>
                                             <p className="text-sm text-gray-500">
-                                                {new Date(
-                                                    order.timestamp.toDate()
-                                                ).toLocaleString()}
+                                                {order.timestamp
+                                                    ? new Date(
+                                                          order.timestamp.toDate()
+                                                      ).toLocaleString()
+                                                    : "N/A"}
                                             </p>
                                         </div>
                                         <div className="border-t border-b py-2 my-2">
@@ -725,7 +1070,7 @@
                                                     <span>
                                                         {item.name}{" "}
                                                         {item.selectedAddOns
-                                                            .length > 0 &&
+                                                            ?.length > 0 &&
                                                             `(${item.selectedAddOns
                                                                 .map(
                                                                     (ao) =>
@@ -744,7 +1089,7 @@
                                             {order.description && (
                                                 <div className="mt-2 pt-2 border-t border-gray-200">
                                                     <p className="text-sm font-semibold">
-                                                        Catatan:
+                                                        {t("notes")}
                                                     </p>
                                                     <p className="text-sm text-gray-600">
                                                         {order.description}
@@ -754,7 +1099,7 @@
                                         </div>
                                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mt-2">
                                             <p className="font-bold mb-2 sm:mb-0">
-                                                Total: Rp
+                                                {t("total")} Rp
                                                 {order.total.toLocaleString(
                                                     "id-ID"
                                                 )}
@@ -764,7 +1109,7 @@
                                                     htmlFor={`status-${order.id}`}
                                                     className="text-sm"
                                                 >
-                                                    Status:
+                                                    {t("status")}
                                                 </label>
                                                 <select
                                                     id={`status-${order.id}`}
@@ -778,16 +1123,16 @@
                                                     className="p-1 border rounded"
                                                 >
                                                     <option value="Baru">
-                                                        Baru
+                                                        {t("new")}
                                                     </option>
                                                     <option value="Diproses">
-                                                        Diproses
+                                                        {t("processing")}
                                                     </option>
                                                     <option value="Selesai">
-                                                        Selesai
+                                                        {t("completed")}
                                                     </option>
                                                     <option value="Dibatalkan">
-                                                        Dibatalkan
+                                                        {t("cancelled")}
                                                     </option>
                                                 </select>
                                             </div>
@@ -796,6 +1141,269 @@
                                 ))
                             )}
                         </div>
+                    </div>
+                );
+            }
+
+            function ManageRooms() {
+                const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
+                const [rooms, setRooms] = useState([]);
+                const [editingRoom, setEditingRoom] = useState(null);
+                const [newRoomData, setNewRoomData] = useState({
+                    name: "",
+                    displayName: "",
+                    title: "Mr.",
+                });
+                const [editRoomData, setEditRoomData] = useState({
+                    displayName: "",
+                    title: "",
+                });
+                const [showDeleteModal, setShowDeleteModal] = useState(false);
+                const [roomToDelete, setRoomToDelete] = useState(null);
+                const [error, setError] = useState("");
+
+                useEffect(() => {
+                    if (!db) return;
+                    const roomsRef = db.collection(
+                        `artifacts/${appId}/public/data/rooms`
+                    );
+                    const unsubscribe = roomsRef.onSnapshot((snapshot) => {
+                        const fetchedRooms = snapshot.docs.map((d) => ({
+                            id: d.id,
+                            ...d.data(),
+                        }));
+                        fetchedRooms.sort((a, b) =>
+                            a.name.localeCompare(b.name)
+                        );
+                        setRooms(fetchedRooms);
+                    });
+                    return () => unsubscribe();
+                }, [db, appId]);
+
+                const handleAddRoom = async () => {
+                    setError("");
+                    if (!newRoomData.name.trim()) {
+                        setError("Nama kamar tidak boleh kosong.");
+                        return;
+                    }
+                    const roomNameUpper = newRoomData.name.trim().toUpperCase();
+                    const roomsRef = db.collection(
+                        `artifacts/${appId}/public/data/rooms`
+                    );
+                    const q = roomsRef.where("name", "==", roomNameUpper);
+                    const snapshot = await q.get();
+                    if (!snapshot.empty) {
+                        setError(
+                            `Kamar dengan nama ${roomNameUpper} sudah ada.`
+                        );
+                        return;
+                    }
+                    await roomsRef.add({
+                        name: roomNameUpper,
+                        displayName:
+                            newRoomData.displayName.trim() || roomNameUpper,
+                        title: newRoomData.title,
+                        isCalling: false,
+                    });
+                    setNewRoomData({ name: "", displayName: "", title: "Mr." });
+                };
+
+                const handleDeleteRoom = async () => {
+                    if (!roomToDelete) return;
+                    await db
+                        .collection(`artifacts/${appId}/public/data/rooms`)
+                        .doc(roomToDelete.id)
+                        .delete();
+                    setShowDeleteModal(false);
+                    setRoomToDelete(null);
+                };
+
+                const handleSaveName = async () => {
+                    if (!editingRoom) return;
+                    const roomRef = db
+                        .collection(`artifacts/${appId}/public/data/rooms`)
+                        .doc(editingRoom.id);
+                    await roomRef.update({
+                        displayName: editRoomData.displayName.trim(),
+                        title: editRoomData.title,
+                    });
+                    setEditingRoom(null);
+                };
+
+                return (
+                    <div>
+                        <h2 className="text-3xl font-bold mb-6">
+                            {t("manageRooms")}
+                        </h2>
+                        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                            <h3 className="text-xl font-bold mb-4">
+                                {t("addNewRoom")}
+                            </h3>
+                            {error && (
+                                <p className="text-red-500 mb-4">{error}</p>
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={newRoomData.name}
+                                    onChange={(e) =>
+                                        setNewRoomData({
+                                            ...newRoomData,
+                                            name: e.target.value,
+                                        })
+                                    }
+                                    className="p-2 border rounded"
+                                    placeholder={t("roomName")}
+                                />
+                                <select
+                                    name="title"
+                                    value={newRoomData.title}
+                                    onChange={(e) =>
+                                        setNewRoomData({
+                                            ...newRoomData,
+                                            title: e.target.value,
+                                        })
+                                    }
+                                    className="p-2 border rounded"
+                                >
+                                    <option value="Mr.">Mr.</option>
+                                    <option value="Mrs.">Mrs.</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    name="displayName"
+                                    value={newRoomData.displayName}
+                                    onChange={(e) =>
+                                        setNewRoomData({
+                                            ...newRoomData,
+                                            displayName: e.target.value,
+                                        })
+                                    }
+                                    className="p-2 border rounded"
+                                    placeholder={t("displayName")}
+                                />
+                            </div>
+                            <button
+                                onClick={handleAddRoom}
+                                className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                            >
+                                {t("addRoom")}
+                            </button>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h3 className="text-xl font-bold mb-4">
+                                {t("roomList")}
+                            </h3>
+                            <ul className="space-y-3">
+                                {rooms.map((room) => (
+                                    <li
+                                        key={room.id}
+                                        className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                                    >
+                                        <div>
+                                            <span className="font-bold text-gray-700">
+                                                {room.name}
+                                            </span>
+                                            <span className="text-gray-500 ml-4">
+                                                {t("displayLabel")}{" "}
+                                                {room.title || ""}{" "}
+                                                {room.displayName ||
+                                                    t("notSet")}
+                                            </span>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingRoom(room);
+                                                    setEditRoomData({
+                                                        displayName:
+                                                            room.displayName ||
+                                                            "",
+                                                        title:
+                                                            room.title || "Mr.",
+                                                    });
+                                                }}
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded"
+                                            >
+                                                {t("edit")}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setRoomToDelete(room);
+                                                    setShowDeleteModal(true);
+                                                }}
+                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+                                            >
+                                                {t("delete")}
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        {editingRoom && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+                                <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                                    <h3 className="text-xl font-bold mb-4">
+                                        {t("editRoomDetails")}{" "}
+                                        {editingRoom.name}
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <select
+                                            name="title"
+                                            value={editRoomData.title}
+                                            onChange={(e) =>
+                                                setEditRoomData({
+                                                    ...editRoomData,
+                                                    title: e.target.value,
+                                                })
+                                            }
+                                            className="w-full p-2 border rounded"
+                                        >
+                                            <option value="Mr.">Mr.</option>
+                                            <option value="Mrs.">Mrs.</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            name="displayName"
+                                            value={editRoomData.displayName}
+                                            onChange={(e) =>
+                                                setEditRoomData({
+                                                    ...editRoomData,
+                                                    displayName: e.target.value,
+                                                })
+                                            }
+                                            className="w-full p-2 border rounded"
+                                            placeholder={t("enterNewName")}
+                                        />
+                                    </div>
+                                    <div className="mt-4 flex justify-end space-x-2">
+                                        <button
+                                            onClick={() => setEditingRoom(null)}
+                                            className="bg-gray-300 px-4 py-2 rounded"
+                                        >
+                                            {t("cancel")}
+                                        </button>
+                                        <button
+                                            onClick={handleSaveName}
+                                            className="bg-blue-600 text-white px-4 py-2 rounded"
+                                        >
+                                            {t("save")}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <ConfirmationModal
+                            show={showDeleteModal}
+                            message={`${t("confirmDeleteRoom")} ${
+                                roomToDelete?.name
+                            }? ${t("thisActionCannotBeUndone")}`}
+                            onConfirm={handleDeleteRoom}
+                            onCancel={() => setShowDeleteModal(false)}
+                        />
                     </div>
                 );
             }
@@ -811,6 +1419,7 @@
                 handleRemoveAddOnField,
                 categories,
             }) {
+                const { t } = useTranslation();
                 return (
                     <form
                         onSubmit={onSubmit}
@@ -818,8 +1427,8 @@
                     >
                         <h3 className="text-xl font-bold mb-4">
                             {isEditing
-                                ? "Ubah Item Menu"
-                                : "Tambah Item Menu Baru"}
+                                ? t("editMenuItem")
+                                : t("addNewMenuItem")}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <input
@@ -829,7 +1438,7 @@
                                 onChange={(e) =>
                                     handleInputChange(e, isEditing)
                                 }
-                                placeholder="Nama Item (e.g., Indomie Goreng)"
+                                placeholder={t("itemNamePlaceholder")}
                                 className="p-2 border rounded"
                                 required
                             />
@@ -840,7 +1449,7 @@
                                 onChange={(e) =>
                                     handleInputChange(e, isEditing)
                                 }
-                                placeholder="Harga (0 untuk Gratis)"
+                                placeholder={t("pricePlaceholder")}
                                 className="p-2 border rounded"
                                 required
                             />
@@ -850,7 +1459,7 @@
                                 onChange={(e) =>
                                     handleInputChange(e, isEditing)
                                 }
-                                placeholder="Deskripsi (Opsional)"
+                                placeholder={t("descriptionPlaceholder")}
                                 className="p-2 border rounded md:col-span-2"
                             />
                             <select
@@ -869,7 +1478,7 @@
                             </select>
                         </div>
                         <div className="mt-6">
-                            <h4 className="font-bold mb-2">Add-ons</h4>
+                            <h4 className="font-bold mb-2">{t("addons")}</h4>
                             {(item.addOns || []).map((addOn, index) => (
                                 <div
                                     key={index}
@@ -886,7 +1495,7 @@
                                                 isEditing
                                             )
                                         }
-                                        placeholder="Nama Add-on (e.g., Telur)"
+                                        placeholder={t("addonNamePlaceholder")}
                                         className="flex-grow p-2 border rounded"
                                     />
                                     <input
@@ -900,7 +1509,7 @@
                                                 isEditing
                                             )
                                         }
-                                        placeholder="Harga Add-on"
+                                        placeholder={t("addonPricePlaceholder")}
                                         className="w-32 p-2 border rounded"
                                     />
                                     <button
@@ -922,7 +1531,7 @@
                                 onClick={() => handleAddAddOnField(isEditing)}
                                 className="bg-gray-200 px-4 py-2 rounded text-sm mt-2"
                             >
-                                Tambah Add-on
+                                {t("addAddon")}
                             </button>
                         </div>
                         <div className="mt-6 flex space-x-2">
@@ -930,7 +1539,7 @@
                                 type="submit"
                                 className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
                             >
-                                {isEditing ? "Simpan Perubahan" : "Tambah Item"}
+                                {isEditing ? t("saveChanges") : t("addItem")}
                             </button>
                             {isEditing && (
                                 <button
@@ -938,7 +1547,7 @@
                                     onClick={onCancel}
                                     className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
                                 >
-                                    Batal
+                                    {t("cancel")}
                                 </button>
                             )}
                         </div>
@@ -948,6 +1557,7 @@
 
             function ManageMenu() {
                 const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
                 const [items, setItems] = useState([]);
                 const [newItem, setNewItem] = useState({
                     name: "",
@@ -959,24 +1569,26 @@
                 const [editingItem, setEditingItem] = useState(null);
                 const [showDeleteModal, setShowDeleteModal] = useState(false);
                 const [itemToDelete, setItemToDelete] = useState(null);
+                const [error, setError] = useState("");
 
                 const categories = [
                     "Makanan",
                     "Minuman",
                     "Dessert",
                     "Alcohol",
-                    "Lain-lain",
+                    "Lainlain",
                 ];
 
                 useEffect(() => {
-                    const itemsRef = db
-                        .collection(`artifacts/${appId}/public/data/items`)
-                        .orderBy("name");
-                    const unsubscribe = itemsRef.onSnapshot((snapshot) => {
+                    const itemsRef = db.collection(
+                        `artifacts/${appId}/public/data/items`
+                    );
+                    const q = itemsRef.orderBy("name");
+                    const unsubscribe = q.onSnapshot((snapshot) => {
                         setItems(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
+                            snapshot.docs.map((d) => ({
+                                id: d.id,
+                                ...d.data(),
                             }))
                         );
                     });
@@ -1027,33 +1639,35 @@
 
                 const handleSubmit = async (e) => {
                     e.preventDefault();
+                    setError("");
                     const itemData = editingItem || newItem;
-                    if (!itemData.name || !itemData.price)
-                        return alert("Nama dan Harga tidak boleh kosong.");
-
+                    if (!itemData.name || !itemData.price) {
+                        setError("Nama dan Harga tidak boleh kosong.");
+                        return;
+                    }
                     const price = parseFloat(itemData.price);
-                    if (isNaN(price)) return alert("Harga harus berupa angka.");
-
+                    if (isNaN(price)) {
+                        setError("Harga harus berupa angka.");
+                        return;
+                    }
                     const finalAddOns = (itemData.addOns || [])
                         .filter((ao) => ao.name && ao.price)
                         .map((ao) => ({
                             name: ao.name,
                             price: parseFloat(ao.price),
                         }));
-
                     const dataToSave = {
                         name: itemData.name,
                         description: itemData.description || "",
-                        price: price,
+                        price,
                         category: itemData.category,
                         addOns: finalAddOns,
                     };
 
                     if (editingItem) {
                         await db
-                            .doc(
-                                `artifacts/${appId}/public/data/items/${editingItem.id}`
-                            )
+                            .collection(`artifacts/${appId}/public/data/items`)
+                            .doc(editingItem.id)
                             .update(dataToSave);
                         setEditingItem(null);
                     } else {
@@ -1073,9 +1687,8 @@
                 const handleDelete = async () => {
                     if (!itemToDelete) return;
                     await db
-                        .doc(
-                            `artifacts/${appId}/public/data/items/${itemToDelete.id}`
-                        )
+                        .collection(`artifacts/${appId}/public/data/items`)
+                        .doc(itemToDelete.id)
                         .delete();
                     setShowDeleteModal(false);
                     setItemToDelete(null);
@@ -1083,35 +1696,41 @@
 
                 return (
                     <div>
-                        <h2 className="text-3xl font-bold mb-6">Kelola Menu</h2>
+                        <h2 className="text-3xl font-bold mb-6">
+                            {t("manageMenu")}
+                        </h2>
+                        {error && <p className="text-red-500 mb-4">{error}</p>}
                         {editingItem ? (
                             <ItemForm
                                 item={editingItem}
                                 isEditing={true}
                                 onSubmit={handleSubmit}
                                 onCancel={() => setEditingItem(null)}
-                                handleInputChange={handleInputChange}
-                                handleAddOnFieldChange={handleAddOnFieldChange}
-                                handleAddAddOnField={handleAddAddOnField}
-                                handleRemoveAddOnField={handleRemoveAddOnField}
-                                categories={categories}
+                                {...{
+                                    handleInputChange,
+                                    handleAddOnFieldChange,
+                                    handleAddAddOnField,
+                                    handleRemoveAddOnField,
+                                    categories,
+                                }}
                             />
                         ) : (
                             <ItemForm
                                 item={newItem}
                                 isEditing={false}
                                 onSubmit={handleSubmit}
-                                handleInputChange={handleInputChange}
-                                handleAddOnFieldChange={handleAddOnFieldChange}
-                                handleAddAddOnField={handleAddAddOnField}
-                                handleRemoveAddOnField={handleRemoveAddOnField}
-                                categories={categories}
+                                {...{
+                                    handleInputChange,
+                                    handleAddOnFieldChange,
+                                    handleAddAddOnField,
+                                    handleRemoveAddOnField,
+                                    categories,
+                                }}
                             />
                         )}
-
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <h3 className="text-xl font-bold mb-4">
-                                Daftar Menu
+                                {t("menuList")}
                             </h3>
                             <div className="space-y-3">
                                 {items.map((item) => (
@@ -1171,7 +1790,7 @@
                                                 }
                                                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm"
                                             >
-                                                Ubah
+                                                {t("edit")}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1180,7 +1799,7 @@
                                                 }}
                                                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded text-sm"
                                             >
-                                                Hapus
+                                                {t("delete")}
                                             </button>
                                         </div>
                                     </div>
@@ -1189,7 +1808,9 @@
                         </div>
                         <ConfirmationModal
                             show={showDeleteModal}
-                            message={`Anda yakin ingin menghapus item ${itemToDelete?.name}?`}
+                            message={`${t("confirmDeleteItem")} ${
+                                itemToDelete?.name
+                            }?`}
                             onConfirm={handleDelete}
                             onCancel={() => setShowDeleteModal(false)}
                         />
@@ -1197,241 +1818,240 @@
                 );
             }
 
-            function ManageRooms() {
+            function ManageInfo() {
                 const { db, appId } = useContext(AppContext);
-                const [rooms, setRooms] = useState([]);
-                const [editingRoom, setEditingRoom] = useState(null);
-                const [newRoomData, setNewRoomData] = useState({
-                    name: "",
-                    displayName: "",
-                    title: "Mr.",
+                const { t } = useTranslation();
+                const [schedule, setSchedule] = useState([]);
+                const [newItem, setNewItem] = useState({
+                    timeFrom: "",
+                    timeTo: "",
+                    event: "",
+                    location: "",
                 });
-                const [editRoomData, setEditRoomData] = useState({
-                    displayName: "",
-                    title: "",
-                });
+                const [editingItem, setEditingItem] = useState(null);
                 const [showDeleteModal, setShowDeleteModal] = useState(false);
-                const [roomToDelete, setRoomToDelete] = useState(null);
+                const [itemToDelete, setItemToDelete] = useState(null);
+                const [error, setError] = useState("");
+                const [loading, setLoading] = useState(true);
 
                 useEffect(() => {
-                    const roomsRef = db.collection(
-                        `artifacts/${appId}/public/data/rooms`
+                    if (!db) return;
+                    const scheduleRef = db.collection(
+                        `artifacts/${appId}/public/data/schedule`
                     );
-                    const q = roomsRef.orderBy("name");
+                    const q = scheduleRef.orderBy("timeFrom");
                     const unsubscribe = q.onSnapshot((snapshot) => {
-                        setRooms(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
+                        setSchedule(
+                            snapshot.docs.map((d) => ({
+                                id: d.id,
+                                ...d.data(),
                             }))
                         );
+                        setLoading(false);
                     });
                     return () => unsubscribe();
                 }, [db, appId]);
 
-                const handleAddRoomChange = (e) => {
+                const handleInputChange = (e, isEditing = false) => {
                     const { name, value } = e.target;
-                    setNewRoomData((prev) => ({ ...prev, [name]: value }));
+                    const stateToUpdate = isEditing ? editingItem : newItem;
+                    const setState = isEditing ? setEditingItem : setNewItem;
+                    setState({ ...stateToUpdate, [name]: value });
                 };
 
-                const handleAddRoom = async () => {
-                    if (!newRoomData.name.trim())
-                        return alert("Nama kamar baru tidak boleh kosong.");
-                    const roomNameUpper = newRoomData.name.trim().toUpperCase();
-
-                    const roomsRef = db.collection(
-                        `artifacts/${appId}/public/data/rooms`
-                    );
-                    const q = roomsRef.where("name", "==", roomNameUpper);
-                    const snapshot = await q.get();
-
-                    if (!snapshot.empty)
-                        return alert(
-                            `Kamar dengan nama ${roomNameUpper} sudah ada.`
-                        );
-
-                    await roomsRef.add({
-                        name: roomNameUpper,
-                        displayName:
-                            newRoomData.displayName.trim() || roomNameUpper,
-                        title: newRoomData.title,
-                        isCalling: false,
-                    });
-                    setNewRoomData({ name: "", displayName: "", title: "Mr." });
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setError("");
+                    const itemData = editingItem || newItem;
+                    if (
+                        !itemData.timeFrom ||
+                        !itemData.timeTo ||
+                        !itemData.event ||
+                        !itemData.location
+                    ) {
+                        setError("Semua field harus diisi.");
+                        return;
+                    }
+                    if (editingItem) {
+                        await db
+                            .collection(
+                                `artifacts/${appId}/public/data/schedule`
+                            )
+                            .doc(editingItem.id)
+                            .update(itemData);
+                        setEditingItem(null);
+                    } else {
+                        await db
+                            .collection(
+                                `artifacts/${appId}/public/data/schedule`
+                            )
+                            .add(itemData);
+                        setNewItem({
+                            timeFrom: "",
+                            timeTo: "",
+                            event: "",
+                            location: "",
+                        });
+                    }
                 };
 
-                const handleDeleteRoom = async () => {
-                    if (!roomToDelete) return;
+                const handleDelete = async () => {
+                    if (!itemToDelete) return;
                     await db
-                        .doc(
-                            `artifacts/${appId}/public/data/rooms/${roomToDelete.id}`
-                        )
+                        .collection(`artifacts/${appId}/public/data/schedule`)
+                        .doc(itemToDelete.id)
                         .delete();
                     setShowDeleteModal(false);
-                    setRoomToDelete(null);
-                };
-
-                const handleEditRoomChange = (e) => {
-                    const { name, value } = e.target;
-                    setEditRoomData((prev) => ({ ...prev, [name]: value }));
-                };
-
-                const handleSaveName = async () => {
-                    if (!editingRoom) return;
-                    const roomRef = db.doc(
-                        `artifacts/${appId}/public/data/rooms/${editingRoom.id}`
-                    );
-                    await roomRef.update({
-                        displayName: editRoomData.displayName.trim(),
-                        title: editRoomData.title,
-                    });
-                    setEditingRoom(null);
+                    setItemToDelete(null);
                 };
 
                 return (
                     <div>
                         <h2 className="text-3xl font-bold mb-6">
-                            Kelola Kamar
+                            {t("manageShipInfoAndSchedule")}
                         </h2>
-
-                        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                        {error && <p className="text-red-500 mb-4">{error}</p>}
+                        <form
+                            onSubmit={handleSubmit}
+                            className="bg-white p-6 rounded-lg shadow-md mb-8"
+                        >
                             <h3 className="text-xl font-bold mb-4">
-                                Tambah Kamar Baru
+                                {editingItem
+                                    ? t("editSchedule")
+                                    : t("addNewSchedule")}
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <input
-                                    type="text"
-                                    name="name"
-                                    value={newRoomData.name}
-                                    onChange={handleAddRoomChange}
+                                    type="time"
+                                    name="timeFrom"
+                                    value={
+                                        editingItem
+                                            ? editingItem.timeFrom
+                                            : newItem.timeFrom
+                                    }
+                                    onChange={(e) =>
+                                        handleInputChange(e, !!editingItem)
+                                    }
                                     className="p-2 border rounded"
-                                    placeholder="Nama Kamar (e.g., KAMAR 11)"
+                                    required
                                 />
-                                <select
-                                    name="title"
-                                    value={newRoomData.title}
-                                    onChange={handleAddRoomChange}
+                                <input
+                                    type="time"
+                                    name="timeTo"
+                                    value={
+                                        editingItem
+                                            ? editingItem.timeTo
+                                            : newItem.timeTo
+                                    }
+                                    onChange={(e) =>
+                                        handleInputChange(e, !!editingItem)
+                                    }
                                     className="p-2 border rounded"
-                                >
-                                    <option value="Mr.">Mr.</option>
-                                    <option value="Mrs.">Mrs.</option>
-                                </select>
+                                    required
+                                />
                                 <input
                                     type="text"
-                                    name="displayName"
-                                    value={newRoomData.displayName}
-                                    onChange={handleAddRoomChange}
+                                    name="event"
+                                    value={
+                                        editingItem
+                                            ? editingItem.event
+                                            : newItem.event
+                                    }
+                                    onChange={(e) =>
+                                        handleInputChange(e, !!editingItem)
+                                    }
+                                    placeholder={t("eventName")}
                                     className="p-2 border rounded"
-                                    placeholder="Nama Tampilan (e.g., Kamar Melati)"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    name="location"
+                                    value={
+                                        editingItem
+                                            ? editingItem.location
+                                            : newItem.location
+                                    }
+                                    onChange={(e) =>
+                                        handleInputChange(e, !!editingItem)
+                                    }
+                                    placeholder={t("location")}
+                                    className="p-2 border rounded"
+                                    required
                                 />
                             </div>
-                            <button
-                                onClick={handleAddRoom}
-                                className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                            >
-                                Tambah Kamar
-                            </button>
-                        </div>
-
+                            <div className="mt-4 flex space-x-2">
+                                <button
+                                    type="submit"
+                                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                                >
+                                    {editingItem
+                                        ? t("saveChanges")
+                                        : t("addSchedule")}
+                                </button>
+                                {editingItem && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingItem(null)}
+                                        className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+                                    >
+                                        {t("cancel")}
+                                    </button>
+                                )}
+                            </div>
+                        </form>
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <h3 className="text-xl font-bold mb-4">
-                                Daftar Kamar
+                                {t("currentScheduleList")}
                             </h3>
-                            <ul className="space-y-3">
-                                {rooms.map((room) => (
-                                    <li
-                                        key={room.id}
-                                        className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                            <div className="space-y-3">
+                                {schedule.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="p-3 bg-gray-50 rounded flex justify-between items-center"
                                     >
-                                        <div>
-                                            <span className="font-bold text-gray-700">
-                                                {room.name}
+                                        <div className="flex items-center">
+                                            <span className="font-bold text-blue-700 w-32">
+                                                {item.timeFrom} - {item.timeTo}
                                             </span>
-                                            <span className="text-gray-500 ml-4">
-                                                Nama Tampilan:{" "}
-                                                {room.title || ""}{" "}
-                                                {room.displayName ||
-                                                    "(Belum diatur)"}
-                                            </span>
+                                            <div>
+                                                <p className="font-semibold text-gray-800">
+                                                    {item.event}
+                                                </p>
+                                                <p className="text-sm text-gray-500">
+                                                    {item.location}
+                                                </p>
+                                            </div>
                                         </div>
                                         <div className="flex space-x-2">
                                             <button
-                                                onClick={() => {
-                                                    setEditingRoom(room);
-                                                    setEditRoomData({
-                                                        displayName:
-                                                            room.displayName ||
-                                                            "",
-                                                        title:
-                                                            room.title || "Mr.",
-                                                    });
-                                                }}
-                                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded"
+                                                onClick={() =>
+                                                    setEditingItem(item)
+                                                }
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm"
                                             >
-                                                Ubah
+                                                {t("edit")}
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    setRoomToDelete(room);
+                                                    setItemToDelete(item);
                                                     setShowDeleteModal(true);
                                                 }}
-                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded text-sm"
                                             >
-                                                Hapus
+                                                {t("delete")}
                                             </button>
                                         </div>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
-                        </div>
-
-                        {editingRoom && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-                                <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-                                    <h3 className="text-xl font-bold mb-4">
-                                        Ubah Detail Kamar {editingRoom.name}
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <select
-                                            name="title"
-                                            value={editRoomData.title}
-                                            onChange={handleEditRoomChange}
-                                            className="w-full p-2 border rounded"
-                                        >
-                                            <option value="Mr.">Mr.</option>
-                                            <option value="Mrs.">Mrs.</option>
-                                        </select>
-                                        <input
-                                            type="text"
-                                            name="displayName"
-                                            value={editRoomData.displayName}
-                                            onChange={handleEditRoomChange}
-                                            className="w-full p-2 border rounded"
-                                            placeholder="Masukkan nama baru"
-                                        />
-                                    </div>
-                                    <div className="mt-4 flex justify-end space-x-2">
-                                        <button
-                                            onClick={() => setEditingRoom(null)}
-                                            className="bg-gray-300 px-4 py-2 rounded"
-                                        >
-                                            Batal
-                                        </button>
-                                        <button
-                                            onClick={handleSaveName}
-                                            className="bg-blue-600 text-white px-4 py-2 rounded"
-                                        >
-                                            Simpan
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
-                        )}
-
+                        </div>
                         <ConfirmationModal
                             show={showDeleteModal}
-                            message={`Anda yakin ingin menghapus kamar ${roomToDelete?.name}? Tindakan ini tidak dapat dibatalkan.`}
-                            onConfirm={handleDeleteRoom}
+                            message={`${t("confirmDeleteSchedule")} "${
+                                itemToDelete?.event
+                            }"?`}
+                            onConfirm={handleDelete}
                             onCancel={() => setShowDeleteModal(false)}
                         />
                     </div>
@@ -1440,6 +2060,7 @@
 
             function AdminChat({ onRoomSelect, unreadRooms }) {
                 const { db, appId } = useContext(AppContext);
+                const { t } = useTranslation();
                 const [messages, setMessages] = useState([]);
                 const [selectedRoom, setSelectedRoom] = useState(null);
                 const [newMessage, setNewMessage] = useState("");
@@ -1454,22 +2075,22 @@
                     );
                     const unsubRooms = roomsRef.onSnapshot((snapshot) => {
                         const newRoomMap = {};
-                        snapshot.docs.forEach((doc) => {
-                            newRoomMap[doc.data().name] = doc.data();
+                        snapshot.docs.forEach((d) => {
+                            newRoomMap[d.data().name] = d.data();
                         });
                         setRoomMap(newRoomMap);
                     });
 
-                    const chatsRef = db
-                        .collection(`artifacts/${appId}/public/data/chats`)
-                        .orderBy("timestamp");
-                    const unsubChats = chatsRef.onSnapshot((snapshot) => {
-                        setMessages(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
-                            }))
-                        );
+                    const chatsRef = db.collection(
+                        `artifacts/${appId}/public/data/chats`
+                    );
+                    const q = chatsRef; // No orderBy to avoid index
+                    const unsubChats = q.onSnapshot((snapshot) => {
+                        const allMessages = snapshot.docs.map((d) => ({
+                            id: d.id,
+                            ...d.data(),
+                        }));
+                        setMessages(allMessages);
                     });
                     return () => {
                         unsubRooms();
@@ -1488,6 +2109,14 @@
                     return acc;
                 }, {});
 
+                for (const room in groupedMessages) {
+                    groupedMessages[room].sort(
+                        (a, b) =>
+                            (a.timestamp?.toDate() || 0) -
+                            (b.timestamp?.toDate() || 0)
+                    );
+                }
+
                 const roomList = Object.keys(groupedMessages).sort();
 
                 const handleSelectRoom = (room) => {
@@ -1503,7 +2132,8 @@
                             roomNumber: selectedRoom,
                             sender: "Admin",
                             message: newMessage.trim(),
-                            timestamp: new Date(),
+                            timestamp:
+                                firebase.firestore.FieldValue.serverTimestamp(),
                             isReadByAdmin: true,
                         });
                     setNewMessage("");
@@ -1511,13 +2141,12 @@
 
                 const handleClearChat = async () => {
                     if (!selectedRoom) return;
-                    const chatsRef = db.collection(
-                        `artifacts/${appId}/public/data/chats`
-                    );
-                    const q = chatsRef.where("roomNumber", "==", selectedRoom);
+                    const q = db
+                        .collection(`artifacts/${appId}/public/data/chats`)
+                        .where("roomNumber", "==", selectedRoom);
                     const snapshot = await q.get();
                     const batch = db.batch();
-                    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+                    snapshot.docs.forEach((d) => batch.delete(d.ref));
                     await batch.commit();
                     setShowClearModal(false);
                 };
@@ -1530,7 +2159,7 @@
                             }`}
                         >
                             <h3 className="text-xl font-bold p-4 border-b">
-                                Pesan dari Kamar
+                                {t("messagesFromRoom")}
                             </h3>
                             <ul className="overflow-y-auto">
                                 {roomList.map((room) => (
@@ -1596,7 +2225,8 @@
                                                 </svg>
                                             </button>
                                             <span className="font-bold text-lg">
-                                                Chat dengan Kamar {selectedRoom}
+                                                {t("chatWithRoom")}{" "}
+                                                {selectedRoom}
                                             </span>
                                         </div>
                                         <button
@@ -1605,7 +2235,7 @@
                                             }
                                             className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                                         >
-                                            Bersihkan Chat
+                                            {t("clearChat")}
                                         </button>
                                     </div>
                                     <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
@@ -1615,23 +2245,25 @@
                                                     key={msg.id}
                                                     className={`flex mb-3 ${
                                                         msg.sender === "Admin"
-                                                            ? "justify-end"
-                                                            : "justify-start"
+                                                            ? "justify-start"
+                                                            : "justify-end"
                                                     }`}
                                                 >
                                                     <div
                                                         className={`p-3 rounded-lg max-w-[70%] ${
                                                             msg.sender ===
                                                             "Admin"
-                                                                ? "bg-blue-500 text-white"
-                                                                : "bg-gray-300 text-gray-800"
+                                                                ? "bg-gray-300 text-gray-800"
+                                                                : "bg-blue-500 text-white"
                                                         }`}
                                                     >
                                                         <p>{msg.message}</p>
                                                         <span className="text-xs opacity-75 mt-1 block">
-                                                            {new Date(
-                                                                msg.timestamp.toDate()
-                                                            ).toLocaleTimeString()}
+                                                            {msg.timestamp
+                                                                ? new Date(
+                                                                      msg.timestamp.toDate()
+                                                                  ).toLocaleTimeString()
+                                                                : "sending..."}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1651,260 +2283,29 @@
                                                 handleSendMessage()
                                             }
                                             className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Ketik balasan..."
+                                            placeholder={t("typeReply")}
                                         />
                                         <button
                                             onClick={handleSendMessage}
                                             className="bg-blue-600 text-white px-6 rounded-r-md hover:bg-blue-700"
                                         >
-                                            Kirim
+                                            {t("send")}
                                         </button>
                                     </div>
                                 </>
                             ) : (
                                 <div className="flex-grow flex items-center justify-center text-gray-500">
-                                    Pilih kamar untuk melihat percakapan.
+                                    {t("chooseRoomToSeeConversation")}
                                 </div>
                             )}
                         </div>
                         <ConfirmationModal
                             show={showClearModal}
-                            message={`Anda yakin ingin menghapus semua chat dari Kamar ${selectedRoom}?`}
+                            message={`${t(
+                                "confirmClearChat"
+                            )} ${selectedRoom}?`}
                             onConfirm={handleClearChat}
                             onCancel={() => setShowClearModal(false)}
-                        />
-                    </div>
-                );
-            }
-
-            function ManageInfo() {
-                const { db, appId } = useContext(AppContext);
-                const [schedule, setSchedule] = useState([]);
-                const [newItem, setNewItem] = useState({
-                    timeFrom: "",
-                    timeTo: "",
-                    event: "",
-                    location: "",
-                });
-                const [editingItem, setEditingItem] = useState(null);
-                const [showDeleteModal, setShowDeleteModal] = useState(false);
-                const [itemToDelete, setItemToDelete] = useState(null);
-
-                useEffect(() => {
-                    if (!db) return;
-                    const scheduleRef = db
-                        .collection(`artifacts/${appId}/public/data/schedule`)
-                        .orderBy("timeFrom");
-                    const unsubscribe = scheduleRef.onSnapshot((snapshot) => {
-                        setSchedule(
-                            snapshot.docs.map((doc) => ({
-                                id: doc.id,
-                                ...doc.data(),
-                            }))
-                        );
-                    });
-                    return () => unsubscribe();
-                }, [db, appId]);
-
-                const handleInputChange = (e, isEditing = false) => {
-                    const { name, value } = e.target;
-                    const stateToUpdate = isEditing ? editingItem : newItem;
-                    const setState = isEditing ? setEditingItem : setNewItem;
-                    setState({ ...stateToUpdate, [name]: value });
-                };
-
-                const handleSubmit = async (e) => {
-                    e.preventDefault();
-                    const itemData = editingItem || newItem;
-                    if (
-                        !itemData.timeFrom ||
-                        !itemData.timeTo ||
-                        !itemData.event ||
-                        !itemData.location
-                    ) {
-                        return alert("Semua field harus diisi.");
-                    }
-
-                    if (editingItem) {
-                        await db
-                            .doc(
-                                `artifacts/${appId}/public/data/schedule/${editingItem.id}`
-                            )
-                            .update(itemData);
-                        setEditingItem(null);
-                    } else {
-                        await db
-                            .collection(
-                                `artifacts/${appId}/public/data/schedule`
-                            )
-                            .add(itemData);
-                        setNewItem({
-                            timeFrom: "",
-                            timeTo: "",
-                            event: "",
-                            location: "",
-                        });
-                    }
-                };
-
-                const handleDelete = async () => {
-                    if (!itemToDelete) return;
-                    await db
-                        .doc(
-                            `artifacts/${appId}/public/data/schedule/${itemToDelete.id}`
-                        )
-                        .delete();
-                    setShowDeleteModal(false);
-                    setItemToDelete(null);
-                };
-
-                return (
-                    <div>
-                        <h2 className="text-3xl font-bold mb-6">
-                            Kelola Info & Jadwal Kapal
-                        </h2>
-
-                        <form
-                            onSubmit={handleSubmit}
-                            className="bg-white p-6 rounded-lg shadow-md mb-8"
-                        >
-                            <h3 className="text-xl font-bold mb-4">
-                                {editingItem
-                                    ? "Ubah Jadwal"
-                                    : "Tambah Jadwal Baru"}
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <input
-                                    type="time"
-                                    name="timeFrom"
-                                    value={
-                                        editingItem
-                                            ? editingItem.timeFrom
-                                            : newItem.timeFrom
-                                    }
-                                    onChange={(e) =>
-                                        handleInputChange(e, !!editingItem)
-                                    }
-                                    className="p-2 border rounded"
-                                    required
-                                />
-                                <input
-                                    type="time"
-                                    name="timeTo"
-                                    value={
-                                        editingItem
-                                            ? editingItem.timeTo
-                                            : newItem.timeTo
-                                    }
-                                    onChange={(e) =>
-                                        handleInputChange(e, !!editingItem)
-                                    }
-                                    className="p-2 border rounded"
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    name="event"
-                                    value={
-                                        editingItem
-                                            ? editingItem.event
-                                            : newItem.event
-                                    }
-                                    onChange={(e) =>
-                                        handleInputChange(e, !!editingItem)
-                                    }
-                                    placeholder="Nama Acara"
-                                    className="p-2 border rounded"
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={
-                                        editingItem
-                                            ? editingItem.location
-                                            : newItem.location
-                                    }
-                                    onChange={(e) =>
-                                        handleInputChange(e, !!editingItem)
-                                    }
-                                    placeholder="Lokasi"
-                                    className="p-2 border rounded"
-                                    required
-                                />
-                            </div>
-                            <div className="mt-4 flex space-x-2">
-                                <button
-                                    type="submit"
-                                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                                >
-                                    {editingItem
-                                        ? "Simpan Perubahan"
-                                        : "Tambah Jadwal"}
-                                </button>
-                                {editingItem && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setEditingItem(null)}
-                                        className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
-                                    >
-                                        Batal
-                                    </button>
-                                )}
-                            </div>
-                        </form>
-
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <h3 className="text-xl font-bold mb-4">
-                                Daftar Jadwal Saat Ini
-                            </h3>
-                            <div className="space-y-3">
-                                {schedule.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="p-3 bg-gray-50 rounded flex justify-between items-center"
-                                    >
-                                        <div className="flex items-center">
-                                            <span className="font-bold text-blue-700 w-32">
-                                                {item.timeFrom} - {item.timeTo}
-                                            </span>
-                                            <div>
-                                                <p className="font-semibold text-gray-800">
-                                                    {item.event}
-                                                </p>
-                                                <p className="text-sm text-gray-500">
-                                                    {item.location}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() =>
-                                                    setEditingItem(item)
-                                                }
-                                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm"
-                                            >
-                                                Ubah
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setItemToDelete(item);
-                                                    setShowDeleteModal(true);
-                                                }}
-                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded text-sm"
-                                            >
-                                                Hapus
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <ConfirmationModal
-                            show={showDeleteModal}
-                            message={`Anda yakin ingin menghapus jadwal "${itemToDelete?.event}"?`}
-                            onConfirm={handleDelete}
-                            onCancel={() => setShowDeleteModal(false)}
                         />
                     </div>
                 );
