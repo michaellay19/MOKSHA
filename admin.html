@@ -437,7 +437,7 @@
 
             const updateOrderStatus = async (orderId, newStatus) => {
                 const orderRef = db.collection(`artifacts/${appId}/public/data/orders`).doc(orderId);
-                await orderRef.update({ status: newStatus });
+                await orderRef.update({ status: newStatus, isReadByCustomer: false, isNew: false });
                 if (newStatus !== "Baru") onUpdateStatus(orderId);
             };
 
@@ -1089,3 +1089,4 @@
     </script>
 </body>
 </html>
+
