@@ -399,6 +399,14 @@
         const [settingsOpen, setSettingsOpen] = useState(false);
         const [hasNewMessage, setHasNewMessage] = useState(false);
         const lastMessageCount = useRef(0);
+        const headerRef = useRef(null);
+        const [headerHeight, setHeaderHeight] = useState(0);
+
+        useEffect(() => {
+            if (headerRef.current) {
+                setHeaderHeight(headerRef.current.clientHeight);
+            }
+        }, [headerRef.current]);
        
         useEffect(() => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
@@ -419,7 +427,6 @@
             };
         }, [activeTab]);
 
-        // This new useEffect listens for chat messages from the dashboard level
         useEffect(() => {
             if (!db || !room) return;
             const chatsRef = collection(db, `artifacts/${appId}/public/data/chats`);
@@ -438,7 +445,7 @@
             });
 
             return () => unsubscribe();
-        }, [db, appId, room, activeTab]); // Re-run when activeTab changes
+        }, [db, appId, room, activeTab]);
 
         const toggleCallStaff = async () => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
@@ -446,71 +453,77 @@
         };
 
         return (
-          <div className="min-h-screen bg-gray-50">
-            <header className="bg-white p-4 shadow-md sticky top-0 z-20">
-              <div className="flex justify-between items-center max-w-7xl mx-auto">
-                <div className="flex items-center space-x-3 min-w-0">
-                  <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-5 w-auto flex-shrink-0" />
-                    <div className="min-w-0">
-                     <h1 className="text-lg font-bold text-gray-800 truncate">
-                       {room.displayName || room.name}
-                     </h1>
-                   </div>
-                </div>
-                <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-                  <button onClick={toggleCallStaff} className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
-                      isCalling
-                        ? "bg-yellow-400 text-yellow-800 animate-pulse"
-                        : "bg-red-600 hover:bg-red-700 text-white"
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                    </svg>
-                    <span className="hidden sm:inline">{t(isCalling ? "cancelCall" : "callStaff")}</span>
-                  </button>
-                 
-                  <div className="relative">
-                    <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </button>
-                    {settingsOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-30">
-                        <button onClick={() => { setLanguage((lang) => lang === "id" ? "en" : "id"); setSettingsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
-                          {language === "id" ? <FlagUK /> : <FlagIndonesia />}
-                          <span>{t("changeLanguage")}</span>
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div ref={headerRef} className="sticky top-0 z-20 flex-shrink-0">
+                <header className="bg-white p-4 shadow-md">
+                  <div className="flex justify-between items-center max-w-7xl mx-auto">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-5 w-auto flex-shrink-0" />
+                        <div className="min-w-0">
+                         <h1 className="text-lg font-bold text-gray-800 truncate">
+                           {room.displayName || room.name}
+                         </h1>
+                       </div>
+                    </div>
+                    <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                      <button onClick={toggleCallStaff} className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
+                          isCalling
+                            ? "bg-yellow-400 text-yellow-800 animate-pulse"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <span className="hidden sm:inline">{t(isCalling ? "cancelCall" : "callStaff")}</span>
+                      </button>
+                     
+                      <div className="relative">
+                        <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
                         </button>
+                        {settingsOpen && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-30">
+                            <button onClick={() => { setLanguage((lang) => lang === "id" ? "en" : "id"); setSettingsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+                              {language === "id" ? <FlagUK /> : <FlagIndonesia />}
+                              <span>{t("changeLanguage")}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
+                </header>
+                <nav className="bg-blue-800 shadow-sm">
+                  <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
+                    <button onClick={() => { setActiveTab("chat"); setHasNewMessage(false); }} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                      {t("chat")}
+                      {hasNewMessage && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>}
+                    </button>
+                    <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                      {t("menu")}
+                    </button>
+                    <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                      {t("order")}
+                    </button>
+                    <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                      {t("safetyAboard")}
+                    </button>
+                  </div>
+                </nav>
+            </div>
+            <main className="flex-grow overflow-y-auto w-full">
+                <div className="max-w-7xl mx-auto h-full">
+                    {activeTab === "chat" && <RoomChat headerHeight={headerHeight} />}
+                    <div className="p-4 sm:p-6">
+                        {activeTab === "menu" && <OrderItems />}
+                        {activeTab === "pesanan" && <OrderHistory />}
+                        {activeTab === "keselamatan" && <SafetyInfo />}
+                    </div>
                 </div>
-              </div>
-            </header>
-            <nav className="bg-blue-800 shadow-sm sticky top-[68px] z-10">
-              <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
-                <button onClick={() => { setActiveTab("chat"); setHasNewMessage(false); }} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                  {t("chat")}
-                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>}
-                </button>
-                <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                  {t("menu")}
-                </button>
-                <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                  {t("order")}
-                </button>
-                <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                  {t("safetyAboard")}
-                </button>
-              </div>
-            </nav>
-            <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
-              {activeTab === "chat" && <RoomChat />}
-              {activeTab === "menu" && <OrderItems />}
-              {activeTab === "pesanan" && <OrderHistory />}
-              {activeTab === "keselamatan" && <SafetyInfo />}
             </main>
           </div>
         );
@@ -939,12 +952,15 @@
         );
       }
 
-      function RoomChat() {
+      function RoomChat({ headerHeight }) {
         const { db, appId, loggedInRoom } = useContext(AppContext);
         const { t } = useTranslation();
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState("");
         const messagesEndRef = useRef(null);
+        
+        const mainPaddingY = 32; // p-4 on mobile is 1rem top + 1rem bottom = 32px
+        const chatHeight = `calc(100vh - ${headerHeight}px - ${mainPaddingY}px)`;
 
         useEffect(() => {
           if (!db || !loggedInRoom) return;
@@ -979,8 +995,8 @@
         };
 
         return (
-          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[calc(100vh_-_14rem)] overflow-hidden">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
+          <div style={{ height: chatHeight }} className="bg-white p-4 sm:p-6 rounded-xl shadow-lg flex flex-col overflow-hidden">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
             <div className="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50 custom-scrollbar">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
