@@ -190,7 +190,7 @@
           confirmOrder: "Confirm Order",
           orderSummary: "Order Summary",
           qty: "Qty",
-          chatWithAdminTitle: "Glad to help - just reach out!",
+          chatWithAdminTitle: "Need Assistance? We're Ready to Help!",
           safetyTitle: "Safety & Comfort Aboard",
           safetySubtitle: "Your Safety and Comfort Are Our Highest Priority",
           musterDrillTitle: "Muster Drill Information",
@@ -261,7 +261,7 @@
           confirmOrder: "Konfirmasi Pesanan",
           orderSummary: "Ringkasan Pesanan",
           qty: "Jml",
-          chatWithAdminTitle: "Senang membantu - hubungi kami!",
+          chatWithAdminTitle: "Butuh Bantuan? Kami Siap Membantu!",
           safetyTitle: "Keselamatan & Kenyamanan di Kapal",
           safetySubtitle: "Keselamatan dan Kenyamanan Anda adalah Prioritas Utama Kami",
           musterDrillTitle: "Informasi Latihan Keamanan (Muster Drill)",
@@ -398,6 +398,7 @@
         const [activeTab, setActiveTab] = useState("chat");
         const [settingsOpen, setSettingsOpen] = useState(false);
         const [hasNewMessage, setHasNewMessage] = useState(false);
+        const lastMessageCount = useRef(0);
        
         useEffect(() => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
@@ -406,6 +407,38 @@
           });
           return () => unsubscribe();
         }, [db, room.id, appId]);
+
+        useEffect(() => {
+            if (activeTab === 'chat') {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+            return () => {
+                document.body.style.overflow = 'auto';
+            };
+        }, [activeTab]);
+
+        // This new useEffect listens for chat messages from the dashboard level
+        useEffect(() => {
+            if (!db || !room) return;
+            const chatsRef = collection(db, `artifacts/${appId}/public/data/chats`);
+            const q = query(chatsRef, where("roomNumber", "==", room.name));
+            
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const fetchedMessages = snapshot.docs.map(doc => doc.data());
+                
+                if (fetchedMessages.length > lastMessageCount.current) {
+                    const lastMessage = fetchedMessages[fetchedMessages.length - 1];
+                    if (lastMessage && lastMessage.sender === 'Admin' && activeTab !== 'chat') {
+                        setHasNewMessage(true);
+                    }
+                }
+                lastMessageCount.current = fetchedMessages.length;
+            });
+
+            return () => unsubscribe();
+        }, [db, appId, room, activeTab]); // Re-run when activeTab changes
 
         const toggleCallStaff = async () => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
@@ -474,7 +507,7 @@
               </div>
             </nav>
             <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
-              {activeTab === "chat" && <RoomChat setHasNewMessage={setHasNewMessage} />}
+              {activeTab === "chat" && <RoomChat />}
               {activeTab === "menu" && <OrderItems />}
               {activeTab === "pesanan" && <OrderHistory />}
               {activeTab === "keselamatan" && <SafetyInfo />}
@@ -621,11 +654,13 @@
           return (
               <div className="bg-white border rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
                   <div>
-                      <h4 className="text-xl font-semibold">{item.name}</h4>
+                      <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="text-xl font-semibold">{item.name}</h4>
+                          <p className={`font-bold text-lg ${item.price === 0 ? "text-green-600" : "text-blue-600"}`}>
+                              {item.price === 0 ? t("free") : `Rp${item.price.toLocaleString("id-ID")}`}
+                          </p>
+                      </div>
                       <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-                      <p className={`font-bold text-lg ${item.price === 0 ? "text-green-600" : "text-blue-600"}`}>
-                          {item.price === 0 ? t("free") : `Rp${item.price.toLocaleString("id-ID")}`}
-                      </p>
                       {item.addOns && item.addOns.length > 0 && (
                           <div className="mt-4 border-t border-gray-200 pt-3">
                               <p className="font-semibold text-sm mb-2">{t("chooseAddons")}:</p>
@@ -904,13 +939,12 @@
         );
       }
 
-      function RoomChat({ setHasNewMessage }) {
+      function RoomChat() {
         const { db, appId, loggedInRoom } = useContext(AppContext);
         const { t } = useTranslation();
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState("");
         const messagesEndRef = useRef(null);
-        const lastMessageCount = useRef(0);
 
         useEffect(() => {
           if (!db || !loggedInRoom) return;
@@ -923,16 +957,6 @@
               const timeB = b.timestamp ? b.timestamp.toDate() : new Date(0);
               return timeA - timeB;
             });
-            
-            // Check for new messages from admin
-            if (fetchedMessages.length > lastMessageCount.current) {
-                const lastMessage = fetchedMessages[fetchedMessages.length - 1];
-                if (lastMessage && lastMessage.sender === 'Admin') {
-                    setHasNewMessage(true);
-                }
-            }
-            lastMessageCount.current = fetchedMessages.length;
-
             setMessages(fetchedMessages);
           });
           return () => unsubscribe();
