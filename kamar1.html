@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kabin - Sistem Layanan Kapal</title>
@@ -81,8 +81,8 @@
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
-  </head>
-  <body class="bg-gray-100">
+</head>
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/javascript">
@@ -191,8 +191,8 @@
           orderSummary: "Order Summary",
           qty: "Qty",
           chatWithAdminTitle: "Glad to help - just reach out!",
-          safetyTitle: "Safety & Wellbeing Aboard",
-          safetySubtitle: "Your Comfort and Safety Are Our Highest Priority",
+          safetyTitle: "Safety & Comfort Aboard",
+          safetySubtitle: "Your Safety and Comfort Are Our Highest Priority",
           musterDrillTitle: "Muster Drill Information",
           musterDrillInfo: "All guests are kindly requested to attend the muster drill on embarkation day. You will be guided by our crew to your designated muster station.",
           musterStation: "Your Muster Station:",
@@ -262,8 +262,8 @@
           orderSummary: "Ringkasan Pesanan",
           qty: "Jml",
           chatWithAdminTitle: "Senang membantu - hubungi kami!",
-          safetyTitle: "Keselamatan & Kesejahteraan di Kapal",
-          safetySubtitle: "Kenyamanan dan Keselamatan Anda adalah Prioritas Utama Kami",
+          safetyTitle: "Keselamatan & Kenyamanan di Kapal",
+          safetySubtitle: "Keselamatan dan Kenyamanan Anda adalah Prioritas Utama Kami",
           musterDrillTitle: "Informasi Latihan Keamanan (Muster Drill)",
           musterDrillInfo: "Seluruh tamu diwajibkan mengikuti latihan keselamatan pada hari keberangkatan. Anda akan dipandu oleh kru kami menuju titik kumpul.",
           musterStation: "Titik Kumpul Anda:",
@@ -286,7 +286,7 @@
       };
 
       function LanguageProvider({ children }) {
-        const [language, setLanguage] = useState("id");
+        const [language, setLanguage] = useState("en"); // Default language set to English
         const t = (key) => translations[language][key] || key;
         return (
           <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -390,14 +390,15 @@
           </AppContext.Provider>
         );
       }
-      
+     
       function RoomDashboard({ room }) {
         const { db, appId } = useContext(AppContext);
         const { t, language, setLanguage } = useTranslation();
         const [isCalling, setIsCalling] = useState(room.isCalling || false);
         const [activeTab, setActiveTab] = useState("chat");
         const [settingsOpen, setSettingsOpen] = useState(false);
-        
+        const [hasNewMessage, setHasNewMessage] = useState(false);
+       
         useEffect(() => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
           const unsubscribe = onSnapshot(roomRef, (doc) => {
@@ -417,11 +418,11 @@
               <div className="flex justify-between items-center max-w-7xl mx-auto">
                 <div className="flex items-center space-x-3 min-w-0">
                   <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-5 w-auto flex-shrink-0" />
-                   <div className="min-w-0">
-                    <h1 className="text-lg font-bold text-gray-800 truncate">
-                      {room.displayName || room.name}
-                    </h1>
-                  </div>
+                    <div className="min-w-0">
+                     <h1 className="text-lg font-bold text-gray-800 truncate">
+                       {room.displayName || room.name}
+                     </h1>
+                   </div>
                 </div>
                 <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                   <button onClick={toggleCallStaff} className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
@@ -435,7 +436,7 @@
                     </svg>
                     <span className="hidden sm:inline">{t(isCalling ? "cancelCall" : "callStaff")}</span>
                   </button>
-                  
+                 
                   <div className="relative">
                     <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,22 +456,25 @@
                 </div>
               </div>
             </header>
-            <nav className="bg-blue-800 shadow-sm p-2 flex justify-around items-center gap-1 rounded-b-xl sticky top-[72px] z-10">
-              <button onClick={() => setActiveTab("chat")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                {t("chat")}
-              </button>
-              <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                {t("menu")}
-              </button>
-              <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                {t("order")}
-              </button>
-              <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
-                {t("safetyAboard")}
-              </button>
+            <nav className="bg-blue-800 shadow-sm sticky top-[68px] z-10">
+              <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
+                <button onClick={() => { setActiveTab("chat"); setHasNewMessage(false); }} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                  {t("chat")}
+                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>}
+                </button>
+                <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                  {t("menu")}
+                </button>
+                <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                  {t("order")}
+                </button>
+                <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
+                  {t("safetyAboard")}
+                </button>
+              </div>
             </nav>
             <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
-              {activeTab === "chat" && <RoomChat />}
+              {activeTab === "chat" && <RoomChat setHasNewMessage={setHasNewMessage} />}
               {activeTab === "menu" && <OrderItems />}
               {activeTab === "pesanan" && <OrderHistory />}
               {activeTab === "keselamatan" && <SafetyInfo />}
@@ -505,7 +509,7 @@
         const removeFromCart = (cartId) => {
             setCart(prev => prev.filter(item => item.cartId !== cartId));
         };
-        
+       
         const handleItemNoteChange = (cartId, newNote) => {
             setCart(prevCart => 
                 prevCart.map(item => 
@@ -513,10 +517,10 @@
                 )
             );
         };
-        
+       
         const placeOrder = async () => {
           if (cart.length === 0) return;
-          
+         
           const processedItems = cart.reduce((acc, currentItem) => {
               const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
               const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
@@ -596,7 +600,7 @@
           </div>
         );
       }
-      
+     
       function ItemCard({ item, onAddToCart }) {
           const { t } = useTranslation();
           const [selectedAddOns, setSelectedAddOns] = useState([]);
@@ -693,7 +697,7 @@
 
       function OrderConfirmationModal({ cart, onClose, onConfirm }) {
           const { t } = useTranslation();
-          
+         
           const groupedItems = cart.reduce((acc, currentItem) => {
               const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
               const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
@@ -890,7 +894,7 @@
                             </ul>
                         </div>
                     </div>
-                    
+                   
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg text-center">
                         <h3 className="text-xl font-bold text-yellow-800 mb-2">{t('needAssistanceTitle')}</h3>
                         <p className="text-yellow-700">{t('needAssistanceInfo')}</p>
@@ -900,12 +904,13 @@
         );
       }
 
-      function RoomChat() {
+      function RoomChat({ setHasNewMessage }) {
         const { db, appId, loggedInRoom } = useContext(AppContext);
         const { t } = useTranslation();
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState("");
         const messagesEndRef = useRef(null);
+        const lastMessageCount = useRef(0);
 
         useEffect(() => {
           if (!db || !loggedInRoom) return;
@@ -918,6 +923,16 @@
               const timeB = b.timestamp ? b.timestamp.toDate() : new Date(0);
               return timeA - timeB;
             });
+            
+            // Check for new messages from admin
+            if (fetchedMessages.length > lastMessageCount.current) {
+                const lastMessage = fetchedMessages[fetchedMessages.length - 1];
+                if (lastMessage && lastMessage.sender === 'Admin') {
+                    setHasNewMessage(true);
+                }
+            }
+            lastMessageCount.current = fetchedMessages.length;
+
             setMessages(fetchedMessages);
           });
           return () => unsubscribe();
@@ -940,15 +955,15 @@
         };
 
         return (
-          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[70vh]">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">{t("chatWithAdminTitle")}</h2>
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-[calc(100vh_-_14rem)] overflow-hidden">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
             <div className="flex-grow overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50 custom-scrollbar">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
                   <div className={`p-3 rounded-lg max-w-[70%] ${ msg.sender === "Admin" ? "bg-gray-300 text-gray-800" : "bg-blue-500 text-white" }`}>
                     <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
                     <p>{msg.message}</p>
-                    <span className="text-xs opacity-75 mt-1 block">
+                    <span className="text-xs opacity-75 mt-1 block text-right">
                       {msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString() : "sending..."}
                     </span>
                   </div>
@@ -956,7 +971,7 @@
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="flex">
+            <div className="flex flex-shrink-0">
               <input
                 type="text"
                 value={newMessage}
