@@ -518,11 +518,13 @@
             <main className="flex-grow overflow-y-auto w-full">
                 <div className="max-w-7xl mx-auto h-full">
                     {activeTab === "chat" && <RoomChat headerHeight={headerHeight} />}
-                    <div className="p-4 sm:p-6">
-                        {activeTab === "menu" && <OrderItems />}
-                        {activeTab === "pesanan" && <OrderHistory />}
-                        {activeTab === "keselamatan" && <SafetyInfo />}
-                    </div>
+                    {activeTab !== "chat" && (
+                        <div className="p-4 sm:p-6">
+                            {activeTab === "menu" && <OrderItems />}
+                            {activeTab === "pesanan" && <OrderHistory />}
+                            {activeTab === "keselamatan" && <SafetyInfo />}
+                        </div>
+                    )}
                 </div>
             </main>
           </div>
