@@ -76,25 +76,20 @@
       body {
         font-family: "Inter", sans-serif;
       }
-      /* Dark Mode Scrollbar */
       .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: #343434; border-radius: 10px; } /* bg-gray-900 */
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 10px; } /* bg-gray-700 */
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #718096; } /* bg-gray-500 */
-      
-      .logo-white-filter {
-        filter: brightness(0) invert(1);
-      }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
-<body class="bg-[#2a2727] text-white">
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/javascript">
       // --- INFORMASI KAMAR SPESIFIK ---
       // Ubah nilai ini untuk setiap file HTML kamar yang berbeda
       // Contoh: "KAMAR 2", "KAMAR 3", dst.
-      window.__room_name = "KAMAR 1";
+      window.__room_name = "KAMAR 2";
       // ------------------------------------
 
       const firebaseConfig = {
@@ -198,8 +193,8 @@
           chatWithAdminTitle: "Need Assistance? We're Ready to Help!",
           safetyTitle: "Safety & Comfort Aboard",
           safetySubtitle: "Your Safety and Comfort Are Our Highest Priority",
-          musterDrillTitle: "Safety Briefing Information (Muster Drill)",
-          musterDrillInfo: "All guests are kindly requested to attend the safety briefing on embarkation day. You will be guided by our crew to your designated muster station.",
+          musterDrillTitle: "Muster Drill Information",
+          musterDrillInfo: "All guests are kindly requested to attend the muster drill on embarkation day. You will be guided by our crew to your designated muster station.",
           musterStation: "Your Muster Station:",
           musterStationLocation: "Deck 2 | Forward Lounge",
           emergencyProceduresTitle: "Emergency Procedures",
@@ -269,8 +264,8 @@
           chatWithAdminTitle: "Butuh Bantuan? Kami Siap Membantu!",
           safetyTitle: "Keselamatan & Kenyamanan di Kapal",
           safetySubtitle: "Keselamatan dan Kenyamanan Anda adalah Prioritas Utama Kami",
-          musterDrillTitle: "Informasi Briefing Keamanan (Muster Drill)",
-          musterDrillInfo: "Seluruh tamu diwajibkan mengikuti briefing keselamatan pada hari keberangkatan. Anda akan dipandu oleh kru kami menuju titik kumpul.",
+          musterDrillTitle: "Informasi Latihan Keamanan (Muster Drill)",
+          musterDrillInfo: "Seluruh tamu diwajibkan mengikuti latihan keselamatan pada hari keberangkatan. Anda akan dipandu oleh kru kami menuju titik kumpul.",
           musterStation: "Titik Kumpul Anda:",
           musterStationLocation: "Deck 2 | Forward Lounge",
           emergencyProceduresTitle: "Prosedur Keadaan Darurat",
@@ -311,11 +306,11 @@
         const { t } = useTranslation();
         if (!show) return null;
         return (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
-              <p className="text-lg text-white mb-6">{message}</p>
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
+              <p className="text-lg text-gray-800 mb-6">{message}</p>
               <div className="flex justify-center space-x-4">
-                <button onClick={onCancel} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">{t("cancel")}</button>
+                <button onClick={onCancel} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">{t("cancel")}</button>
                 <button onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">{t("confirm")}</button>
               </div>
             </div>
@@ -386,8 +381,8 @@
           initialize();
         }, []);
 
-        if (loading) return <div className="min-h-screen flex items-center justify-center text-white">Loading Room Information...</div>;
-        if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-900 text-red-200">{error}</div>;
+        if (loading) return <div className="min-h-screen flex items-center justify-center">Loading Room Information...</div>;
+        if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-100 text-red-700">{error}</div>;
 
         return (
           <AppContext.Provider value={{ db, appId: window.__app_id, loggedInRoom: roomData }}>
@@ -395,7 +390,7 @@
           </AppContext.Provider>
         );
       }
-      
+     
       function RoomDashboard({ room }) {
         const { db, appId } = useContext(AppContext);
         const { t, language, setLanguage } = useTranslation();
@@ -404,7 +399,7 @@
         const [settingsOpen, setSettingsOpen] = useState(false);
         const [hasNewMessage, setHasNewMessage] = useState(false);
         const lastMessageCount = useRef(0);
-        
+       
         useEffect(() => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
           const unsubscribe = onSnapshot(roomRef, (doc) => {
@@ -439,16 +434,16 @@
         };
 
         return (
-          <div className="h-screen bg-[#2a2727] flex flex-col">
-            <header className="bg-[#2a2727] p-4 shadow-md z-20 flex-shrink-0">
+          <div className="h-screen bg-gray-50 flex flex-col">
+            <header className="bg-white p-4 shadow-md z-20 flex-shrink-0">
               <div className="flex justify-between items-center max-w-7xl mx-auto">
-                <div className="flex items-center space-x-4 min-w-0">
-                  <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-6 w-auto flex-shrink-0 logo-white-filter" />
+                <div className="flex items-center space-x-3 min-w-0">
+                  <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-5 w-auto flex-shrink-0" />
                     <div className="min-w-0">
-                      <h1 className="text-xl font-bold text-white truncate">
-                        {room.displayName || room.name}
-                      </h1>
-                    </div>
+                     <h1 className="text-lg font-bold text-gray-800 truncate">
+                       {room.displayName || room.name}
+                     </h1>
+                   </div>
                 </div>
                 <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                   <button onClick={toggleCallStaff} className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
@@ -462,17 +457,17 @@
                     </svg>
                     <span className="hidden sm:inline">{t(isCalling ? "cancelCall" : "callStaff")}</span>
                   </button>
-                  
+                 
                   <div className="relative">
-                    <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
+                    <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </button>
                     {settingsOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-30">
-                        <button onClick={() => { setLanguage((lang) => lang === "id" ? "en" : "id"); setSettingsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-600 flex items-center space-x-2">
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-30">
+                        <button onClick={() => { setLanguage((lang) => lang === "id" ? "en" : "id"); setSettingsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
                           {language === "id" ? <FlagUK /> : <FlagIndonesia />}
                           <span>{t("changeLanguage")}</span>
                         </button>
@@ -482,19 +477,19 @@
                 </div>
               </div>
             </header>
-            <nav className="bg-red-800 shadow-sm z-10 flex-shrink-0">
+            <nav className="bg-blue-800 shadow-sm z-10 flex-shrink-0">
               <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
-                <button onClick={() => { setActiveTab("chat"); setHasNewMessage(false); }} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                <button onClick={() => { setActiveTab("chat"); setHasNewMessage(false); }} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
                   {t("chat")}
-                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-yellow-400"></span>}
+                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>}
                 </button>
-                <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                <button onClick={() => setActiveTab("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
                   {t("menu")}
                 </button>
-                <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                <button onClick={() => setActiveTab("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
                   {t("order")}
                 </button>
-                <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                <button onClick={() => setActiveTab("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-teal-400 text-white" : "border-transparent text-blue-200 hover:text-white" }`} >
                   {t("safetyAboard")}
                 </button>
               </div>
@@ -541,7 +536,7 @@
         const removeFromCart = (cartId) => {
             setCart(prev => prev.filter(item => item.cartId !== cartId));
         };
-        
+       
         const handleItemNoteChange = (cartId, newNote) => {
             setCart(prevCart => 
                 prevCart.map(item => 
@@ -549,10 +544,10 @@
                 )
             );
         };
-        
+       
         const placeOrder = async () => {
           if (cart.length === 0) return;
-          
+         
           const processedItems = cart.reduce((acc, currentItem) => {
               const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
               const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
@@ -592,7 +587,7 @@
               (category) =>
                 items.filter(i => i.category === category).length > 0 && (
                   <div key={category} className="mb-8">
-                    <h3 className="text-2xl font-bold text-white mb-4 border-b-2 border-red-800 pb-2">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-600 pb-2">
                       {t(`category_${category}`)}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -605,7 +600,7 @@
             )}
             {cart.length > 0 && (
               <div className="fixed bottom-6 right-6 z-30">
-                <button onClick={() => setShowCartModal(true)} className="bg-green-500 hover:bg-green-600 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse">
+                <button onClick={() => setShowCartModal(true)} className="bg-teal-500 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse">
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                   </svg>
@@ -632,7 +627,7 @@
           </div>
         );
       }
-      
+     
       function ItemCard({ item, onAddToCart }) {
           const { t } = useTranslation();
           const [selectedAddOns, setSelectedAddOns] = useState([]);
@@ -651,21 +646,21 @@
           };
 
           return (
-              <div className="bg-[#343434] border border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:shadow-red-800/10 hover:-translate-y-1 transition-all duration-200">
+              <div className="bg-white border rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
                   <div>
                       <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="text-xl font-semibold text-white">{item.name}</h4>
-                          <p className={`font-bold text-lg ${item.price === 0 ? "text-green-400" : "text-red-400"}`}>
+                          <h4 className="text-xl font-semibold">{item.name}</h4>
+                          <p className={`font-bold text-lg ${item.price === 0 ? "text-green-600" : "text-blue-600"}`}>
                               {item.price === 0 ? t("free") : `Rp${item.price.toLocaleString("id-ID")}`}
                           </p>
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">{item.description}</p>
+                      <p className="text-gray-600 text-sm mb-2">{item.description}</p>
                       {item.addOns && item.addOns.length > 0 && (
-                          <div className="mt-4 border-t border-gray-700 pt-3">
-                              <p className="font-semibold text-sm mb-2 text-gray-200">{t("chooseAddons")}:</p>
+                          <div className="mt-4 border-t border-gray-200 pt-3">
+                              <p className="font-semibold text-sm mb-2">{t("chooseAddons")}:</p>
                               {item.addOns.map((addOn) => (
-                                  <label key={addOn.name} className="flex items-center text-sm mb-1 text-gray-300">
-                                      <input type="checkbox" onChange={() => toggleAddOn(addOn)} checked={selectedAddOns.some(a=>a.name === addOn.name)} className="form-checkbox h-4 w-4 text-red-500 bg-gray-600 border-gray-500 rounded focus:ring-red-500"/>
+                                  <label key={addOn.name} className="flex items-center text-sm mb-1">
+                                      <input type="checkbox" onChange={() => toggleAddOn(addOn)} checked={selectedAddOns.some(a=>a.name === addOn.name)} className="form-checkbox h-4 w-4 text-blue-600 rounded"/>
                                       <span className="ml-2">
                                           {addOn.name} (+Rp{addOn.price.toLocaleString("id-ID")})
                                       </span>
@@ -674,7 +669,7 @@
                           </div>
                       )}
                   </div>
-                  <button onClick={handleAddToCart} className="mt-4 w-full bg-red-800 text-white font-bold py-2 px-4 rounded hover:bg-red-900 transition-colors">
+                  <button onClick={handleAddToCart} className="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors">
                       {t("addToCart")}
                   </button>
               </div>
@@ -686,24 +681,24 @@
           const total = cart.reduce((sum, item) => sum + item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
 
           return (
-              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-                  <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg">
-                      <h3 className="text-2xl font-bold mb-4 text-white">{t("yourCart")}</h3>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+                      <h3 className="text-2xl font-bold mb-4">{t("yourCart")}</h3>
                       <div className="space-y-4 mb-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                           {cart.map((item) => (
-                              <div key={item.cartId} className="border-b border-gray-700 pb-3">
+                              <div key={item.cartId} className="border-b pb-3">
                                   <div className="flex justify-between items-start">
                                       <div>
-                                          <p className="font-semibold text-white">{item.name}</p>
+                                          <p className="font-semibold">{item.name}</p>
                                           {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                                              <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                              <ul className="text-xs text-gray-500 list-disc list-inside ml-2">
                                                   {item.selectedAddOns.map((ao) => <li key={ao.name}>{ao.name}</li>)}
                                               </ul>
                                           )}
                                       </div>
                                       <div className="flex items-center space-x-4">
-                                        <p className="whitespace-nowrap text-gray-300">Rp{(item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString("id-ID")}</p>
-                                        <button onClick={() => onRemoveItem(item.cartId)} className="text-red-500 hover:text-red-400 font-bold">{t("delete")}</button>
+                                        <p className="whitespace-nowrap">Rp{(item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString("id-ID")}</p>
+                                        <button onClick={() => onRemoveItem(item.cartId)} className="text-red-500 hover:text-red-700 font-bold">{t("delete")}</button>
                                       </div>
                                   </div>
                                   <input
@@ -711,18 +706,18 @@
                                       placeholder={t('itemNotePlaceholder')}
                                       value={item.note}
                                       onChange={(e) => onItemNoteChange(item.cartId, e.target.value)}
-                                      className="mt-2 w-full p-1 bg-gray-700 border border-gray-600 rounded text-sm text-white placeholder-gray-400"
+                                      className="mt-2 w-full p-1 border rounded text-sm"
                                   />
                               </div>
                           ))}
                       </div>
-                      <div className="flex justify-between font-bold text-xl mt-4 text-white">
+                      <div className="flex justify-between font-bold text-xl mt-4">
                           <p>{t("total")}:</p>
                           <p>Rp{total.toLocaleString("id-ID")}</p>
                       </div>
                       <div className="mt-6 flex justify-end space-x-2">
-                          <button onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">{t("close")}</button>
-                          <button onClick={onPlaceOrder} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">{t("placeOrder")}</button>
+                          <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded">{t("close")}</button>
+                          <button onClick={onPlaceOrder} className="bg-green-600 text-white px-4 py-2 rounded">{t("placeOrder")}</button>
                       </div>
                   </div>
               </div>
@@ -731,7 +726,7 @@
 
       function OrderConfirmationModal({ cart, onClose, onConfirm }) {
           const { t } = useTranslation();
-          
+         
           const groupedItems = cart.reduce((acc, currentItem) => {
               const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
               const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
@@ -748,18 +743,18 @@
           const total = finalCart.reduce((sum, item) => sum + (item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity, 0);
 
           return (
-              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-                  <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
-                      <h3 className="text-2xl font-bold mb-4 text-center text-white">{t("orderSummary")}</h3>
-                      <div className="space-y-3 mb-4 max-h-60 overflow-y-auto custom-scrollbar pr-2 border-t border-b border-gray-700 py-3">
+              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                      <h3 className="text-2xl font-bold mb-4 text-center">{t("orderSummary")}</h3>
+                      <div className="space-y-3 mb-4 max-h-60 overflow-y-auto custom-scrollbar pr-2 border-t border-b py-3">
                           {finalCart.map((item, index) => (
                               <div key={index}>
-                                  <div className="flex justify-between font-semibold text-white">
+                                  <div className="flex justify-between font-semibold">
                                       <span>{item.name} (x{item.quantity})</span>
                                       <span>Rp{(item.price * item.quantity).toLocaleString("id-ID")}</span>
                                   </div>
                                   {item.selectedAddOns.length > 0 && (
-                                      <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                      <ul className="text-xs text-gray-600 list-disc list-inside ml-2">
                                           {item.selectedAddOns.map(ao => 
                                               <li key={ao.name} className="flex justify-between">
                                                   <span>{ao.name} (x{item.quantity})</span>
@@ -768,16 +763,16 @@
                                           )}
                                       </ul>
                                   )}
-                                  {item.note && <p className="text-xs text-gray-400 italic mt-1">Catatan: "{item.note}"</p>}
+                                  {item.note && <p className="text-xs text-gray-500 italic mt-1">Catatan: "{item.note}"</p>}
                               </div>
                           ))}
                       </div>
-                      <div className="flex justify-between font-bold text-xl mt-4 text-white">
+                      <div className="flex justify-between font-bold text-xl mt-4">
                           <p>{t("total")}:</p>
                           <p>Rp{total.toLocaleString("id-ID")}</p>
                       </div>
                       <div className="mt-6 flex justify-around space-x-2">
-                          <button onClick={onClose} className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">{t("cancel")}</button>
+                          <button onClick={onClose} className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">{t("cancel")}</button>
                           <button onClick={onConfirm} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">{t("confirmOrder")}</button>
                       </div>
                   </div>
@@ -819,39 +814,39 @@
           setOrderToCancel(null);
         };
 
-        if (loading) return <p className="text-gray-300">{t("loadingHistory")}...</p>;
+        if (loading) return <p>{t("loadingHistory")}...</p>;
 
         return (
-          <div className="bg-[#343434] p-6 rounded-xl shadow-lg">
-            <h2 className="text-3xl font-bold text-white mb-6">{t("yourOrderHistory")}</h2>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">{t("yourOrderHistory")}</h2>
             {orders.length === 0 ? (
-              <p className="text-gray-400">{t("noOrdersYet")}.</p>
+              <p>{t("noOrdersYet")}.</p>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="border bg-gray-700 rounded-lg p-4">
+                  <div key={order.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="font-bold text-white">
+                        <p className="font-bold">
                           {t("order")} #{order.id.substring(0, 6)}
                         </p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-500">
                           {t("orderOn")}{" "}
                           {order.timestamp ? new Date(order.timestamp.toDate()).toLocaleString() : '...'}
                         </p>
                       </div>
                       <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
                           order.status === "Selesai"
-                            ? "bg-green-900 text-green-300"
+                            ? "bg-green-100 text-green-800"
                             : order.status === "Dibatalkan"
-                            ? "bg-red-900 text-red-300"
-                            : "bg-yellow-900 text-yellow-300"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
                         {t(`status_${order.status}`)}
                       </span>
                     </div>
-                    <ul className="list-disc list-inside ml-4 mb-2 text-sm text-gray-300">
+                    <ul className="list-disc list-inside ml-4 mb-2 text-sm">
                       {order.items.map((item, index) => (
                         <li key={index}>
                           {item.name} (x{item.quantity})
@@ -860,7 +855,7 @@
                       ))}
                     </ul>
                     <div className="border-t pt-2 flex justify-between items-center">
-                      <p className="font-bold text-lg text-white">
+                      <p className="font-bold text-lg">
                         {t("total")}: Rp{order.total.toLocaleString("id-ID")}
                       </p>
                       {(order.status === "Baru" || order.status === "Diproses") && (
@@ -886,52 +881,52 @@
       function SafetyInfo() {
         const { t } = useTranslation();
         return (
-            <div className="bg-[#343434] p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-6 rounded-xl shadow-lg">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-2">{t('safetyTitle')}</h2>
-                    <p className="text-md text-gray-400">{t('safetySubtitle')}</p>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">{t('safetyTitle')}</h2>
+                    <p className="text-md text-gray-600">{t('safetySubtitle')}</p>
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
-                        <h3 className="text-xl font-bold text-red-200 mb-2">{t('musterDrillTitle')}</h3>
-                        <p className="mb-3 text-red-300">{t('musterDrillInfo')}</p>
-                        <div className="bg-gray-700 p-3 rounded-lg text-center">
-                            <p className="font-semibold text-red-300">{t('musterStation')}</p>
-                            <p className="text-2xl font-bold text-red-100">{t('musterStationLocation')}</p>
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <h3 className="text-xl font-bold text-blue-800 mb-2">{t('musterDrillTitle')}</h3>
+                        <p className="mb-3 text-blue-900">{t('musterDrillInfo')}</p>
+                        <div className="bg-white p-3 rounded-lg text-center">
+                            <p className="font-semibold text-blue-700">{t('musterStation')}</p>
+                            <p className="text-2xl font-bold text-blue-900">{t('musterStationLocation')}</p>
                         </div>
                     </div>
 
-                    <div className="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-r-lg">
-                        <h3 className="text-xl font-bold text-red-200 mb-3">{t('emergencyProceduresTitle')}</h3>
-                        <ul className="space-y-3 text-red-300">
-                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep1')}</span></li>
-                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep2')}</span></li>
-                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep3')}</span></li>
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <h3 className="text-xl font-bold text-red-800 mb-3">{t('emergencyProceduresTitle')}</h3>
+                        <ul className="space-y-3 text-red-900">
+                            <li className="flex items-start"><span className="text-red-500 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep1')}</span></li>
+                            <li className="flex items-start"><span className="text-red-500 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep2')}</span></li>
+                            <li className="flex items-start"><span className="text-red-500 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep3')}</span></li>
                         </ul>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
-                            <h3 className="text-xl font-bold text-gray-200 mb-3">{t('shipwideSafetyTitle')}</h3>
-                            <ul className="space-y-2 text-gray-300">
-                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature1')}</li>
-                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature2')}</li>
-                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature3')}</li>
+                        <div className="bg-gray-50 p-4 rounded-lg border">
+                            <h3 className="text-xl font-bold text-gray-700 mb-3">{t('shipwideSafetyTitle')}</h3>
+                            <ul className="space-y-2 text-gray-600">
+                                <li className="flex items-center"><span className="text-green-500 mr-2">&#10004;</span>{t('shipwideFeature1')}</li>
+                                <li className="flex items-center"><span className="text-green-500 mr-2">&#10004;</span>{t('shipwideFeature2')}</li>
+                                <li className="flex items-center"><span className="text-green-500 mr-2">&#10004;</span>{t('shipwideFeature3')}</li>
                             </ul>
                         </div>
-                        <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
-                            <h3 className="text-xl font-bold text-gray-200 mb-3">{t('inStateroomSafetyTitle')}</h3>
-                            <ul className="space-y-2 text-gray-300">
-                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('inStateroomFeature1')}</li>
-                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('inStateroomFeature2')}</li>
+                        <div className="bg-gray-50 p-4 rounded-lg border">
+                            <h3 className="text-xl font-bold text-gray-700 mb-3">{t('inStateroomSafetyTitle')}</h3>
+                            <ul className="space-y-2 text-gray-600">
+                                <li className="flex items-center"><span className="text-green-500 mr-2">&#10004;</span>{t('inStateroomFeature1')}</li>
+                                <li className="flex items-center"><span className="text-green-500 mr-2">&#10004;</span>{t('inStateroomFeature2')}</li>
                             </ul>
                         </div>
                     </div>
-                    
-                    <div className="bg-yellow-900/50 border-l-4 border-yellow-500 p-4 rounded-r-lg text-center">
-                        <h3 className="text-xl font-bold text-yellow-200 mb-2">{t('needAssistanceTitle')}</h3>
-                        <p className="text-yellow-300">{t('needAssistanceInfo')}</p>
+                   
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg text-center">
+                        <h3 className="text-xl font-bold text-yellow-800 mb-2">{t('needAssistanceTitle')}</h3>
+                        <p className="text-yellow-700">{t('needAssistanceInfo')}</p>
                     </div>
                 </div>
             </div>
@@ -979,12 +974,12 @@
 
         return (
           <div className="p-4 sm:p-6 h-full flex flex-col">
-            <div className="bg-[#343434] rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
-                <h2 className="text-xl sm:text-2xl font-bold text-white p-4 sm:p-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
-                <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
+            <div className="bg-white rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 p-4 sm:p-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
+                <div className="flex-grow overflow-y-auto border-t border-b border-gray-200 p-4 bg-gray-50 custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
-                      <div className={`p-3 rounded-lg max-w-[70%] ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
+                      <div className={`p-3 rounded-lg max-w-[70%] ${ msg.sender === "Admin" ? "bg-gray-300 text-gray-800" : "bg-blue-500 text-white" }`}>
                         <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
                         <p>{msg.message}</p>
                         <span className="text-xs opacity-75 mt-1 block text-right">
@@ -995,16 +990,16 @@
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
-                <div className="p-4 flex flex-shrink-0 bg-[#343434] rounded-b-xl">
+                <div className="p-4 flex flex-shrink-0">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-grow p-3 bg-[#4A4A4A] border border-gray-600 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400"
+                    className="flex-grow p-3 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder={t("typeYourMessage")}
                   />
-                  <button onClick={handleSendMessage} className="bg-red-800 text-white px-6 rounded-r-md hover:bg-red-900 transition-colors">
+                  <button onClick={handleSendMessage} className="bg-blue-600 text-white px-6 rounded-r-md hover:bg-blue-700">
                     {t("send")}
                   </button>
                 </div>
