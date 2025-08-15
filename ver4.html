@@ -78,8 +78,8 @@
       }
       /* Dark Mode Scrollbar */
       .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: #1a202c; border-radius: 10px; } /* bg-gray-900 */
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; } /* bg-gray-700 */
+      .custom-scrollbar::-webkit-scrollbar-track { background: #343434; border-radius: 10px; } /* bg-gray-900 */
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 10px; } /* bg-gray-700 */
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #718096; } /* bg-gray-500 */
       
       .logo-white-filter {
@@ -87,7 +87,7 @@
       }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-[#2a2727] text-white">
     <div id="root"></div>
 
     <script type="text/javascript">
@@ -439,8 +439,8 @@
         };
 
         return (
-          <div className="h-screen bg-gray-900 flex flex-col">
-            <header className="bg-gray-800 p-4 shadow-md z-20 flex-shrink-0">
+          <div className="h-screen bg-[#2a2727] flex flex-col">
+            <header className="bg-[#2a2727] p-4 shadow-md z-20 flex-shrink-0">
               <div className="flex justify-between items-center max-w-7xl mx-auto">
                 <div className="flex items-center space-x-4 min-w-0">
                   <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-6 w-auto flex-shrink-0 logo-white-filter" />
@@ -605,7 +605,7 @@
             )}
             {cart.length > 0 && (
               <div className="fixed bottom-6 right-6 z-30">
-                <button onClick={() => setShowCartModal(true)} className="bg-red-800 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse">
+                <button onClick={() => setShowCartModal(true)} className="bg-green-500 hover:bg-green-600 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse">
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                   </svg>
@@ -979,9 +979,9 @@
 
         return (
           <div className="p-4 sm:p-6 h-full flex flex-col">
-            <div className="bg-gray-800 rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
+            <div className="bg-[#343434] rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
                 <h2 className="text-xl sm:text-2xl font-bold text-white p-4 sm:p-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
-                <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-gray-900 custom-scrollbar">
+                <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
                       <div className={`p-3 rounded-lg max-w-[70%] ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
@@ -995,13 +995,13 @@
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
-                <div className="p-4 flex flex-shrink-0 bg-gray-800 rounded-b-xl">
+                <div className="p-4 flex flex-shrink-0 bg-[#343434] rounded-b-xl">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-grow p-3 bg-gray-700 border border-gray-600 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400"
+                    className="flex-grow p-3 bg-[#4A4A4A] border border-gray-600 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400"
                     placeholder={t("typeYourMessage")}
                   />
                   <button onClick={handleSendMessage} className="bg-red-800 text-white px-6 rounded-r-md hover:bg-red-900 transition-colors">
