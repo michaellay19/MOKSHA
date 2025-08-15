@@ -2214,20 +2214,23 @@
                                                     key={msg.id}
                                                     className={`flex mb-3 ${
                                                         msg.sender === "Admin"
-                                                            ? "justify-start"
-                                                            : "justify-end"
+                                                            ? "justify-end"
+                                                            : "justify-start"
                                                     }`}
                                                 >
                                                     <div
                                                         className={`p-3 rounded-lg max-w-[70%] ${
                                                             msg.sender ===
                                                             "Admin"
-                                                                ? "bg-gray-300 text-gray-800"
-                                                                : "bg-blue-500 text-white"
+                                                                ? "bg-blue-500 text-white"
+                                                                : "bg-gray-300 text-gray-800"
                                                         }`}
                                                     >
+                                                        <p className="font-bold text-sm mb-1">
+                                                            {msg.sender === "Admin" ? t("admin") : (roomMap[msg.sender]?.displayName || msg.sender)}
+                                                        </p>
                                                         <p>{msg.message}</p>
-                                                        <span className="text-xs opacity-75 mt-1 block">
+                                                        <span className="text-xs opacity-75 mt-1 block text-right">
                                                             {msg.timestamp
                                                                 ? new Date(
                                                                       msg.timestamp.toDate()
