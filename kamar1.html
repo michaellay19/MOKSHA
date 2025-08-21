@@ -1041,7 +1041,7 @@
                 <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
-                      <div className={`p-3 rounded-lg max-w-xs sm:max-w-md ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
+                      <div className={`p-3 rounded-lg max-w-[80%] sm:max-w-md ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
                         <div className="flex items-baseline space-x-2">
                             <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
                             <span className="text-xs opacity-75">
