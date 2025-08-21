@@ -6,18 +6,12 @@
     <title>Kabin - Sistem Layanan Kapal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
     />
     <!-- React & Babel CDN -->
-    <script
-      src="https://unpkg.com/react@18/umd/react.development.js"
-      crossorigin
-    ></script>
-    <script
-      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-      crossorigin
-    ></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Firebase Modular SDK (v9+) -->
     <script type="module">
@@ -72,7 +66,7 @@
         writeBatch,
       };
     </script>
-     <!-- Tone.js for sound effects -->
+      <!-- Tone.js for sound effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
       body {
@@ -166,6 +160,7 @@
           placeOrder: "Place Order",
           delete: "Delete",
           addToCart: "Add to Cart",
+          chooseOptions: "Choose an Option",
           chooseAddons: "Choose Add-ons",
           yourOrderHistory: "Your Order History",
           noOrdersYet: "You have no past orders.",
@@ -237,6 +232,7 @@
           placeOrder: "Buat Pesanan",
           delete: "Hapus",
           addToCart: "Tambah ke Keranjang",
+          chooseOptions: "Pilih Opsi",
           chooseAddons: "Pilih Add-ons",
           yourOrderHistory: "Riwayat Pesanan Anda",
           noOrdersYet: "Anda belum pernah memesan.",
@@ -566,8 +562,8 @@
           return () => unsubscribe();
         }, [db, appId]);
 
-        const addToCart = (item, selectedAddOns) => {
-            const cartItem = { ...item, cartId: Date.now(), selectedAddOns, note: "" };
+        const addToCart = (item, selectedOption, selectedAddOns) => {
+            const cartItem = { ...item, cartId: Date.now(), selectedOption, selectedAddOns, note: "" };
             setCart(prev => [...prev, cartItem]);
         };
 
@@ -587,8 +583,9 @@
           if (cart.length === 0) return;
           
           const processedItems = cart.reduce((acc, currentItem) => {
-              const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
-              const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
+              const optionKey = currentItem.selectedOption ? currentItem.selectedOption.name : 'no-option';
+              const addOnKey = (currentItem.selectedAddOns || []).map(a => a.name).sort().join(',');
+              const itemKey = `${currentItem.id}-${optionKey}-${addOnKey}-${currentItem.note}`;
 
               if (acc[itemKey]) {
                   acc[itemKey].quantity += 1;
@@ -600,7 +597,7 @@
 
           const finalItems = Object.values(processedItems);
           const total = finalItems.reduce(
-            (sum, item) => sum + (item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity,
+            (sum, item) => sum + (item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity,
             0
           );
 
@@ -668,23 +665,25 @@
       
       function ItemCard({ item, onAddToCart }) {
           const { t } = useTranslation();
+          const [selectedOption, setSelectedOption] = useState(null);
           const [selectedAddOns, setSelectedAddOns] = useState([]);
 
-          // --- MODIFIED: Treat add-ons like radio buttons ---
-          const toggleAddOn = (addOn) => {
-              setSelectedAddOns(prev => {
-                  // If the clicked addOn is already selected, deselect it.
-                  if (prev.some(a => a.name === addOn.name)) {
-                      return [];
-                  }
-                  // Otherwise, select it as the only option.
-                  return [addOn];
-              });
+          const handleOptionChange = (option) => {
+              setSelectedOption(option);
+          };
+
+          const handleAddOnToggle = (addOn) => {
+              setSelectedAddOns(prev => 
+                  prev.some(a => a.name === addOn.name)
+                      ? prev.filter(a => a.name !== addOn.name)
+                      : [...prev, addOn]
+              );
           };
 
           const handleAddToCart = () => {
-              onAddToCart(item, selectedAddOns);
-              setSelectedAddOns([]); // Reset add-ons after adding to cart
+              onAddToCart(item, selectedOption, selectedAddOns);
+              setSelectedOption(null);
+              setSelectedAddOns([]);
           };
 
           return (
@@ -697,12 +696,27 @@
                           </p>
                       </div>
                       <p className="text-gray-400 text-sm mb-2">{item.description}</p>
+                      
+                      {item.options && item.options.length > 0 && (
+                          <div className="mt-4 border-t border-gray-700 pt-3">
+                              <p className="font-semibold text-sm mb-2 text-gray-200">{t("chooseOptions")}:</p>
+                              {item.options.map((option) => (
+                                  <label key={option.name} className="flex items-center text-sm mb-1 text-gray-300">
+                                      <input type="radio" name={`option-${item.id}`} onChange={() => handleOptionChange(option)} checked={selectedOption?.name === option.name} className="form-radio h-4 w-4 text-red-500 bg-gray-600 border-gray-500 focus:ring-red-500"/>
+                                      <span className="ml-2">
+                                          {option.name} (+Rp{option.price.toLocaleString("id-ID")})
+                                      </span>
+                                  </label>
+                              ))}
+                          </div>
+                      )}
+
                       {item.addOns && item.addOns.length > 0 && (
                           <div className="mt-4 border-t border-gray-700 pt-3">
                               <p className="font-semibold text-sm mb-2 text-gray-200">{t("chooseAddons")}:</p>
                               {item.addOns.map((addOn) => (
                                   <label key={addOn.name} className="flex items-center text-sm mb-1 text-gray-300">
-                                      <input type="checkbox" onChange={() => toggleAddOn(addOn)} checked={selectedAddOns.some(a=>a.name === addOn.name)} className="form-checkbox h-4 w-4 text-red-500 bg-gray-600 border-gray-500 rounded focus:ring-red-500"/>
+                                      <input type="checkbox" onChange={() => handleAddOnToggle(addOn)} checked={selectedAddOns.some(a=>a.name === addOn.name)} className="form-checkbox h-4 w-4 text-red-500 bg-gray-600 border-gray-500 rounded focus:ring-red-500"/>
                                       <span className="ml-2">
                                           {addOn.name} (+Rp{addOn.price.toLocaleString("id-ID")})
                                       </span>
@@ -720,7 +734,7 @@
 
       function CartModal({ cart, onClose, onRemoveItem, onItemNoteChange, onPlaceOrder }) {
           const { t } = useTranslation();
-          const total = cart.reduce((sum, item) => sum + item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
+          const total = cart.reduce((sum, item) => sum + item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
 
           return (
               <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
@@ -732,15 +746,14 @@
                                   <div className="flex justify-between items-start">
                                       <div>
                                           <p className="font-semibold text-white">{item.name}</p>
-                                          {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                                              <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
-                                                  {item.selectedAddOns.map((ao) => <li key={ao.name}>{ao.name}</li>)}
-                                              </ul>
-                                          )}
+                                          <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                            {item.selectedOption && <li>{item.selectedOption.name}</li>}
+                                            {item.selectedAddOns?.map((ao) => <li key={ao.name}>{ao.name}</li>)}
+                                          </ul>
                                       </div>
                                       <div className="flex items-center space-x-4">
-                                        <p className="whitespace-nowrap text-gray-300">Rp{(item.price + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString("id-ID")}</p>
-                                        <button onClick={() => onRemoveItem(item.cartId)} className="text-red-500 hover:text-red-400 font-bold">{t("delete")}</button>
+                                          <p className="whitespace-nowrap text-gray-300">Rp{(item.price + (item.selectedOption?.price || 0) + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString("id-ID")}</p>
+                                          <button onClick={() => onRemoveItem(item.cartId)} className="text-red-500 hover:text-red-400 font-bold">{t("delete")}</button>
                                       </div>
                                   </div>
                                   <input
@@ -770,8 +783,9 @@
           const { t } = useTranslation();
           
           const groupedItems = cart.reduce((acc, currentItem) => {
-              const addOnKey = currentItem.selectedAddOns.map(a => a.name).sort().join(',');
-              const itemKey = `${currentItem.id}-${addOnKey}-${currentItem.note}`;
+              const optionKey = currentItem.selectedOption ? currentItem.selectedOption.name : 'no-option';
+              const addOnKey = (currentItem.selectedAddOns || []).map(a => a.name).sort().join(',');
+              const itemKey = `${currentItem.id}-${optionKey}-${addOnKey}-${currentItem.note}`;
 
               if (acc[itemKey]) {
                   acc[itemKey].quantity += 1;
@@ -782,7 +796,7 @@
           }, {});
 
           const finalCart = Object.values(groupedItems);
-          const total = finalCart.reduce((sum, item) => sum + (item.price + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity, 0);
+          const total = finalCart.reduce((sum, item) => sum + (item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity, 0);
 
           return (
               <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
@@ -795,15 +809,21 @@
                                       <span>{item.name} (x{item.quantity})</span>
                                       <span>Rp{(item.price * item.quantity).toLocaleString("id-ID")}</span>
                                   </div>
-                                  {item.selectedAddOns.length > 0 && (
-                                      <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
-                                          {item.selectedAddOns.map(ao => 
-                                              <li key={ao.name} className="flex justify-between">
-                                                  <span>{ao.name} (x{item.quantity})</span>
-                                                  <span>+Rp{(ao.price * item.quantity).toLocaleString("id-ID")}</span>
-                                              </li>
-                                          )}
-                                      </ul>
+                                  {(item.selectedOption || item.selectedAddOns.length > 0) && (
+                                    <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                        {item.selectedOption && (
+                                            <li className="flex justify-between">
+                                                <span>{item.selectedOption.name} (x{item.quantity})</span>
+                                                <span>+Rp{(item.selectedOption.price * item.quantity).toLocaleString("id-ID")}</span>
+                                            </li>
+                                        )}
+                                        {item.selectedAddOns.map(ao => 
+                                            <li key={ao.name} className="flex justify-between">
+                                                <span>{ao.name} (x{item.quantity})</span>
+                                                <span>+Rp{(ao.price * item.quantity).toLocaleString("id-ID")}</span>
+                                            </li>
+                                        )}
+                                    </ul>
                                   )}
                                   {item.note && <p className="text-xs text-gray-400 italic mt-1">Catatan: "{item.note}"</p>}
                               </div>
@@ -1021,12 +1041,14 @@
                 <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
-                      <div className={`p-3 rounded-lg max-w-[70%] ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
-                        <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
-                        <p>{msg.message}</p>
-                        <span className="text-xs opacity-75 mt-1 block text-right">
-                          {msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString() : "sending..."}
-                        </span>
+                      <div className={`p-3 rounded-lg max-w-xs sm:max-w-md ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
+                        <div className="flex items-baseline space-x-2">
+                            <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
+                            <span className="text-xs opacity-75">
+                                {msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "sending..."}
+                            </span>
+                        </div>
+                        <p className="mt-1 break-words">{msg.message}</p>
                       </div>
                     </div>
                   ))}
