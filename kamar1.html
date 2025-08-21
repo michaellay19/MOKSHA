@@ -453,17 +453,6 @@
             return () => unsubscribe();
         }, [db, appId, room]);
 
-        useEffect(() => {
-            if (activeTab === 'chat') {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = 'auto';
-            }
-            return () => {
-                document.body.style.overflow = 'auto'; // Cleanup on unmount
-            };
-        }, [activeTab]);
-
         const handleTabClick = (tabName) => {
             initAudio();
             setActiveTab(tabName);
@@ -539,7 +528,7 @@
                 </button>
               </div>
             </nav>
-            <main className="flex-grow w-full overflow-y-auto">
+            <main className={`flex-grow w-full ${activeTab === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 <div className="max-w-7xl mx-auto h-full">
                     {activeTab === "chat" && <RoomChat />}
                     {activeTab !== "chat" && (
