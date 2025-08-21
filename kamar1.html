@@ -528,7 +528,7 @@
                 </button>
               </div>
             </nav>
-            <main className="flex-grow overflow-y-auto w-full">
+            <main className={`flex-grow w-full ${activeTab === 'chat' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 <div className="max-w-7xl mx-auto h-full">
                     {activeTab === "chat" && <RoomChat />}
                     {activeTab !== "chat" && (
