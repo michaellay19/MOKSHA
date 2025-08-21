@@ -1285,38 +1285,21 @@
                                                 : "N/A"}
                                         </p>
                                     </div>
-                                    <div className="border-t border-b py-2 my-2">
+                                    <div className="border-t border-b py-2 my-2 divide-y divide-gray-200">
                                         {order.items.map((item) => (
-                                            <div
-                                                key={item.cartId}
-                                                className="flex justify-between text-sm py-1"
-                                            >
-                                                <div>
-                                                    <p>
-                                                        {item.name}{" "}
-                                                        {item.selectedAddOns
-                                                            ?.length > 0 &&
-                                                            `(${item.selectedAddOns
-                                                                .map(
-                                                                    (ao) =>
-                                                                        ao.name
-                                                                )
-                                                                .join(
-                                                                    ", "
-                                                                )})`}
-                                                    </p>
-                                                    {item.note && (
-                                                        <p className="text-xs text-gray-500 italic pl-2">
-                                                            - "{item.note}"
-                                                        </p>
+                                            <div key={item.cartId} className="py-2">
+                                                <p className="font-semibold text-gray-800">{item.name}</p>
+                                                {item.note && (
+                                                    <p className="text-sm text-gray-600 italic pl-4">"{item.note}"</p>
+                                                )}
+                                                <ul className="list-disc list-inside pl-4 text-sm text-gray-600 mt-1">
+                                                    {item.selectedOption && (
+                                                        <li>{item.selectedOption.name}</li>
                                                     )}
-                                                </div>
-                                                <span>
-                                                    Rp
-                                                    {item.price.toLocaleString(
-                                                        "id-ID"
-                                                    )}
-                                                </span>
+                                                    {item.selectedAddOns?.map((addon, index) => (
+                                                        <li key={addon.name + index}>{addon.name}</li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         ))}
                                     </div>
