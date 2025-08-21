@@ -104,6 +104,10 @@
                 pricePlaceholder: "Price (0 for Free)",
                 descriptionPlaceholder: "Description (Optional)",
                 category: "Category",
+                options: "Options",
+                optionNamePlaceholder: "Option Name (e.g., Spicy)",
+                optionPricePlaceholder: "Option Price",
+                addOption: "Add Option",
                 addons: "Add-ons",
                 addonNamePlaceholder: "Add-on Name (e.g., Egg)",
                 addonPricePlaceholder: "Add-on Price",
@@ -111,6 +115,8 @@
                 saveChanges: "Save Changes",
                 addItem: "Add Item",
                 menuList: "Menu List",
+                searchPlaceholder: "Search for an item...",
+                noItemsMatch: "No items match your search or filter.",
                 confirmDeleteItem: "Are you sure you want to delete the item",
                 messagesFromRoom: "Messages from Room",
                 chooseRoomToSeeConversation: "Choose a room to see the conversation.",
@@ -190,6 +196,10 @@
                 pricePlaceholder: "Harga (0 untuk Gratis)",
                 descriptionPlaceholder: "Deskripsi (Opsional)",
                 category: "Kategori",
+                options: "Opsi",
+                optionNamePlaceholder: "Nama Opsi (e.g., Pedas)",
+                optionPricePlaceholder: "Harga Opsi",
+                addOption: "Tambah Opsi",
                 addons: "Add-ons",
                 addonNamePlaceholder: "Nama Add-on (e.g., Telur)",
                 addonPricePlaceholder: "Harga Add-on",
@@ -197,6 +207,8 @@
                 saveChanges: "Simpan Perubahan",
                 addItem: "Tambah Item",
                 menuList: "Daftar Menu",
+                searchPlaceholder: "Cari item...",
+                noItemsMatch: "Tidak ada item yang cocok dengan pencarian atau filter Anda.",
                 confirmDeleteItem: "Anda yakin ingin menghapus item",
                 messagesFromRoom: "Pesan dari Kamar",
                 chooseRoomToSeeConversation: "Pilih kamar untuk melihat percakapan.",
@@ -654,7 +666,7 @@
                                         badgeColorClass[item.color] ||
                                         "bg-gray-400"
                                     } text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center ${
-                                        item.id === "panggilan"
+                                        item.id === "panggilan" || item.id === 'chat'
                                             ? "animate-pulse"
                                             : ""
                                     }`}
@@ -1625,6 +1637,9 @@
             onSubmit,
             onCancel,
             handleInputChange,
+            handleOptionFieldChange,
+            handleAddOptionField,
+            handleRemoveOptionField,
             handleAddOnFieldChange,
             handleAddAddOnField,
             handleRemoveAddOnField,
@@ -1688,6 +1703,67 @@
                             ))}
                         </select>
                     </div>
+                    
+                    {/* Options Section */}
+                    <div className="mt-6">
+                        <h4 className="font-bold mb-2">{t("options")}</h4>
+                        {(item.options || []).map((option, index) => (
+                            <div
+                                key={index}
+                                className="flex items-center space-x-2 mb-2"
+                            >
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={option.name}
+                                    onChange={(e) =>
+                                        handleOptionFieldChange(
+                                            index,
+                                            e,
+                                            isEditing
+                                        )
+                                    }
+                                    placeholder={t("optionNamePlaceholder")}
+                                    className="flex-grow p-2 border rounded"
+                                />
+                                <input
+                                    type="number"
+                                    name="price"
+                                    value={option.price}
+                                    onChange={(e) =>
+                                        handleOptionFieldChange(
+                                            index,
+                                            e,
+                                            isEditing
+                                        )
+                                    }
+                                    placeholder={t("optionPricePlaceholder")}
+                                    className="w-32 p-2 border rounded"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleRemoveOptionField(
+                                            index,
+                                            isEditing
+                                        )
+                                    }
+                                    className="bg-red-500 text-white px-3 py-1 rounded"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={() => handleAddOptionField(isEditing)}
+                            className="bg-gray-200 px-4 py-2 rounded text-sm mt-2"
+                        >
+                            {t("addOption")}
+                        </button>
+                    </div>
+
+                    {/* Add-ons Section */}
                     <div className="mt-6">
                         <h4 className="font-bold mb-2">{t("addons")}</h4>
                         {(item.addOns || []).map((addOn, index) => (
@@ -1745,6 +1821,7 @@
                             {t("addAddon")}
                         </button>
                     </div>
+
                     <div className="mt-6 flex space-x-2">
                         <button
                             type="submit"
@@ -1775,12 +1852,15 @@
                 description: "",
                 price: "",
                 category: "Makanan",
+                options: [],
                 addOns: [],
             });
             const [editingItem, setEditingItem] = useState(null);
             const [showDeleteModal, setShowDeleteModal] = useState(false);
             const [itemToDelete, setItemToDelete] = useState(null);
             const [error, setError] = useState("");
+            const [searchQuery, setSearchQuery] = useState("");
+            const [categoryFilter, setCategoryFilter] = useState("All");
 
             const categories = [
                 "Makanan",
@@ -1813,6 +1893,37 @@
                 setState({ ...targetState, [name]: value });
             };
 
+            const handleOptionFieldChange = (index, e, isEditing = false) => {
+                const { name, value } = e.target;
+                const targetState = isEditing ? editingItem : newItem;
+                const setState = isEditing ? setEditingItem : setNewItem;
+                const updatedOptions = (targetState.options || []).map((option, i) =>
+                    i === index ? { ...option, [name]: value } : option
+                );
+                setState({ ...targetState, options: updatedOptions });
+            };
+
+            const handleAddOptionField = (isEditing = false) => {
+                const targetState = isEditing ? editingItem : newItem;
+                const setState = isEditing ? setEditingItem : setNewItem;
+                setState({
+                    ...targetState,
+                    options: [
+                        ...(targetState.options || []),
+                        { name: "", price: "" },
+                    ],
+                });
+            };
+
+            const handleRemoveOptionField = (index, isEditing = false) => {
+                const targetState = isEditing ? editingItem : newItem;
+                const setState = isEditing ? setEditingItem : setNewItem;
+                const updatedOptions = (targetState.options || []).filter(
+                    (_, i) => i !== index
+                );
+                setState({ ...targetState, options: updatedOptions });
+            };
+
             const handleAddOnFieldChange = (
                 index,
                 e,
@@ -1821,7 +1932,7 @@
                 const { name, value } = e.target;
                 const targetState = isEditing ? editingItem : newItem;
                 const setState = isEditing ? setEditingItem : setNewItem;
-                const updatedAddOns = targetState.addOns.map((addOn, i) =>
+                const updatedAddOns = (targetState.addOns || []).map((addOn, i) =>
                     i === index ? { ...addOn, [name]: value } : addOn
                 );
                 setState({ ...targetState, addOns: updatedAddOns });
@@ -1842,7 +1953,7 @@
             const handleRemoveAddOnField = (index, isEditing = false) => {
                 const targetState = isEditing ? editingItem : newItem;
                 const setState = isEditing ? setEditingItem : setNewItem;
-                const updatedAddOns = targetState.addOns.filter(
+                const updatedAddOns = (targetState.addOns || []).filter(
                     (_, i) => i !== index
                 );
                 setState({ ...targetState, addOns: updatedAddOns });
@@ -1852,7 +1963,9 @@
                 e.preventDefault();
                 setError("");
                 const itemData = editingItem || newItem;
-                if (!itemData.name || !itemData.price) {
+                
+                // BUG FIX: Allow price to be 0
+                if (!itemData.name.trim() || (itemData.price !== 0 && !itemData.price)) {
                     setError("Name and Price cannot be empty.");
                     return;
                 }
@@ -1861,17 +1974,28 @@
                     setError("Price must be a number.");
                     return;
                 }
+                
+                // BUG FIX: Allow option/addon price to be 0
+                const finalOptions = (itemData.options || [])
+                    .filter((opt) => opt.name && (opt.price === 0 || opt.price))
+                    .map((opt) => ({
+                        name: opt.name,
+                        price: parseFloat(opt.price),
+                    }));
+
                 const finalAddOns = (itemData.addOns || [])
-                    .filter((ao) => ao.name && ao.price)
+                    .filter((ao) => ao.name && (ao.price === 0 || ao.price))
                     .map((ao) => ({
                         name: ao.name,
                         price: parseFloat(ao.price),
                     }));
+
                 const dataToSave = {
                     name: itemData.name,
                     description: itemData.description || "",
                     price,
                     category: itemData.category,
+                    options: finalOptions,
                     addOns: finalAddOns,
                 };
 
@@ -1890,6 +2014,7 @@
                         description: "",
                         price: "",
                         category: "Makanan",
+                        options: [],
                         addOns: [],
                     });
                 }
@@ -1905,6 +2030,12 @@
                 setItemToDelete(null);
             };
 
+            const filteredItems = items.filter(item => {
+                const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+                const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+
             return (
                 <div>
                     <h2 className="text-3xl font-bold mb-6">
@@ -1919,6 +2050,9 @@
                             onCancel={() => setEditingItem(null)}
                             {...{
                                 handleInputChange,
+                                handleOptionFieldChange,
+                                handleAddOptionField,
+                                handleRemoveOptionField,
                                 handleAddOnFieldChange,
                                 handleAddAddOnField,
                                 handleRemoveAddOnField,
@@ -1932,6 +2066,9 @@
                             onSubmit={handleSubmit}
                             {...{
                                 handleInputChange,
+                                handleOptionFieldChange,
+                                handleAddOptionField,
+                                handleRemoveOptionField,
                                 handleAddOnFieldChange,
                                 handleAddAddOnField,
                                 handleRemoveAddOnField,
@@ -1943,78 +2080,131 @@
                         <h3 className="text-xl font-bold mb-4">
                             {t("menuList")}
                         </h3>
+
+                        {/* Search and Filter UI */}
+                        <div className="mb-6 flex flex-col md:flex-row gap-4">
+                            <input
+                                type="text"
+                                placeholder={t('searchPlaceholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="flex-grow p-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="flex items-center flex-wrap gap-2">
+                                <button onClick={() => setCategoryFilter("All")} className={`px-4 py-2 rounded-lg text-sm ${categoryFilter === 'All' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'}`}>
+                                    {t('all')}
+                                </button>
+                                {categories.map(cat => (
+                                    <button key={cat} onClick={() => setCategoryFilter(cat)} className={`px-4 py-2 rounded-lg text-sm ${categoryFilter === cat ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'}`}>
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="space-y-3">
-                            {items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="p-3 bg-gray-50 rounded flex justify-between items-start"
-                                >
-                                    <div>
-                                        <p className="font-bold text-gray-800">
-                                            {item.name}{" "}
-                                            <span className="text-sm font-normal text-gray-500">
-                                                ({item.category})
-                                            </span>
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            {item.description}
-                                        </p>
-                                        <p
-                                            className={`font-semibold mt-1 ${
-                                                item.price === 0
-                                                    ? "text-green-600"
-                                                    : "text-blue-600"
-                                            }`}
-                                        >
-                                            {item.price === 0
-                                                ? "Gratis"
-                                                : `Rp${item.price.toLocaleString(
-                                                      "id-ID"
-                                                  )}`}
-                                        </p>
-                                        {item.addOns &&
-                                            item.addOns.length > 0 && (
-                                                <ul className="text-xs list-disc list-inside mt-1">
-                                                    {item.addOns.map(
-                                                        (ao) => (
-                                                            <li
-                                                                key={
-                                                                    ao.name
-                                                                }
-                                                            >
-                                                                {ao.name}{" "}
-                                                                (+Rp
-                                                                {ao.price.toLocaleString(
-                                                                    "id-ID"
-                                                                )}
+                            {filteredItems.length > 0 ? (
+                                filteredItems.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="p-3 bg-gray-50 rounded flex justify-between items-start"
+                                    >
+                                        <div>
+                                            <p className="font-bold text-gray-800">
+                                                {item.name}{" "}
+                                                <span className="text-sm font-normal text-gray-500">
+                                                    ({item.category})
+                                                </span>
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                {item.description}
+                                            </p>
+                                            <p
+                                                className={`font-semibold mt-1 ${
+                                                    item.price === 0
+                                                        ? "text-green-600"
+                                                        : "text-blue-600"
+                                                }`}
+                                            >
+                                                {item.price === 0
+                                                    ? "Gratis"
+                                                    : `Rp${item.price.toLocaleString(
+                                                          "id-ID"
+                                                      )}`}
+                                            </p>
+                                            {item.options &&
+                                                item.options.length > 0 && (
+                                                    <div className="mt-1">
+                                                        <p className="text-xs font-bold">Options:</p>
+                                                        <ul className="text-xs list-disc list-inside">
+                                                            {item.options.map(
+                                                                (opt) => (
+                                                                    <li
+                                                                        key={
+                                                                            opt.name
+                                                                        }
+                                                                    >
+                                                                        {opt.name}{" "}
+                                                                        (+Rp
+                                                                        {opt.price.toLocaleString(
+                                                                            "id-ID"
+                                                                        )}
+                                                                        )
+                                                                    </li>
                                                                 )
-                                                            </li>
-                                                        )
-                                                    )}
-                                                </ul>
-                                            )}
+                                                            )}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            {item.addOns &&
+                                                item.addOns.length > 0 && (
+                                                    <div className="mt-1">
+                                                        <p className="text-xs font-bold">Add-ons:</p>
+                                                        <ul className="text-xs list-disc list-inside">
+                                                            {item.addOns.map(
+                                                                (ao) => (
+                                                                    <li
+                                                                        key={
+                                                                            ao.name
+                                                                        }
+                                                                    >
+                                                                        {ao.name}{" "}
+                                                                        (+Rp
+                                                                        {ao.price.toLocaleString(
+                                                                            "id-ID"
+                                                                        )}
+                                                                        )
+                                                                    </li>
+                                                                )
+                                                            )}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                        </div>
+                                        <div className="flex space-x-2 flex-shrink-0">
+                                            <button
+                                                onClick={() =>
+                                                    setEditingItem(item)
+                                                }
+                                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm"
+                                            >
+                                                {t("edit")}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setItemToDelete(item);
+                                                    setShowDeleteModal(true);
+                                                }}
+                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded text-sm"
+                                            >
+                                                {t("delete")}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex space-x-2 flex-shrink-0">
-                                        <button
-                                            onClick={() =>
-                                                setEditingItem(item)
-                                            }
-                                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm"
-                                        >
-                                            {t("edit")}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setItemToDelete(item);
-                                                setShowDeleteModal(true);
-                                            }}
-                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded text-sm"
-                                        >
-                                            {t("delete")}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500 py-4">{t('noItemsMatch')}</p>
+                            )}
                         </div>
                     </div>
                     <ConfirmationModal
@@ -2228,17 +2418,19 @@
                                                             : "bg-gray-300 text-gray-800"
                                                     }`}
                                                 >
-                                                    <p className="font-bold text-sm mb-1">
-                                                        {msg.sender === "Admin" ? "Admin" : (roomMap[msg.sender]?.displayName || msg.sender)}
-                                                    </p>
-                                                    <p>{msg.message}</p>
-                                                    <span className="text-xs opacity-75 mt-1 block text-right">
-                                                        {msg.timestamp
-                                                            ? new Date(
-                                                                  msg.timestamp.toDate()
-                                                              ).toLocaleTimeString()
-                                                            : "sending..."}
-                                                    </span>
+                                                    <div className="flex items-baseline space-x-2">
+                                                        <p className="font-bold text-sm">
+                                                            {msg.sender === "Admin" ? "Admin" : (roomMap[msg.sender]?.displayName || msg.sender)}
+                                                        </p>
+                                                        <span className="text-xs opacity-75">
+                                                            {msg.timestamp
+                                                                ? new Date(
+                                                                      msg.timestamp.toDate()
+                                                                  ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                                : "sending..."}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1">{msg.message}</p>
                                                 </div>
                                             </div>
                                         )
