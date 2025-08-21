@@ -929,36 +929,38 @@
                         </>
                     );
                 };
-
-                const tabTitleMap = {
-                    home: "captainPanel",
-                    panggilan: "roomCalls",
-                    pesanan: "manageOrders",
-                    menu: "manageMenu",
-                    kamar: "manageRooms",
-                    chat: "manageChat",
-                };
+                
+                const menuNavItems = [
+                    { id: "home", label: t("captainPanel") },
+                    { id: "panggilan", label: t("roomCalls") },
+                    { id: "pesanan", label: t("manageOrders") },
+                    { id: "menu", label: t("manageMenu") },
+                    { id: "kamar", label: t("manageRooms") },
+                    { id: "chat", label: t("manageChat") },
+                ];
 
                 return (
                     <div className="flex flex-col h-screen bg-gray-100">
-                        <header className="bg-white shadow-md p-4 flex justify-between items-center w-full flex-shrink-0">
-                            {activeTab !== "home" ? (
-                                <button
-                                    onClick={() => setActiveTab("home")}
-                                    className="text-gray-700 p-2 rounded-full hover:bg-gray-200"
-                                    title="Back"
-                                >
-                                    <BackIcon />
-                                </button>
-                            ) : (
-                                <div className="w-10 h-10"></div>
-                            )}
-
-                            <h2 className="text-xl font-bold capitalize">
-                                {t(tabTitleMap[activeTab])}
-                            </h2>
-
-                            <div className="flex items-center space-x-2 sm:space-x-4">
+                        <header className="bg-white shadow-md p-4 flex justify-between items-center w-full flex-shrink-0 flex-wrap">
+                            <nav className="flex items-center space-x-2 sm:space-x-4 flex-wrap">
+                                {menuNavItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`relative px-3 py-2 my-1 rounded-md transition-colors duration-200 text-sm font-medium ${
+                                            activeTab === item.id
+                                                ? "bg-blue-600 text-white"
+                                                : "text-gray-600 hover:bg-gray-200"
+                                        }`}
+                                    >
+                                        {item.label}
+                                        {item.id === 'panggilan' && callingRooms.length > 0 && (
+                                            <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                                        )}
+                                    </button>
+                                ))}
+                            </nav>
+                            <div className="flex items-center space-x-2 sm:space-x-4 mt-2 sm:mt-0 ml-auto">
                                 <button
                                     onClick={() =>
                                         setLanguage((lang) =>
@@ -2227,7 +2229,7 @@
                                                         }`}
                                                     >
                                                         <p className="font-bold text-sm mb-1">
-                                                            {msg.sender === "Admin" ? t("admin") : (roomMap[msg.sender]?.displayName || msg.sender)}
+                                                            {msg.sender === "Admin" ? "Admin" : (roomMap[msg.sender]?.displayName || msg.sender)}
                                                         </p>
                                                         <p>{msg.message}</p>
                                                         <span className="text-xs opacity-75 mt-1 block text-right">
