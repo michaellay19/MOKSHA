@@ -9,9 +9,11 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     />
+    <!-- React & Babel CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase Modular SDK (v9+) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       window.firebaseApp = { initializeApp };
@@ -64,7 +66,8 @@
         writeBatch,
       };
     </script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+      <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
       body {
         font-family: "Inter", sans-serif;
@@ -405,14 +408,13 @@
             activeTabRef.current = activeTab;
         }, [activeTab]);
         
-        // MODIFIKASI: Mengaktifkan audio pada interaksi pertama
         useEffect(() => {
             const unlockAudio = async () => {
                 if (!isAudioUnlocked.current && Tone.context.state !== 'running') {
                     try {
                         await Tone.start();
                         console.log("Audio context unlocked on first interaction.");
-                        isAudioUnlocked.current = true; // Tandai audio sudah aktif
+                        isAudioUnlocked.current = true;
                         
                         document.removeEventListener('click', unlockAudio);
                         document.removeEventListener('touchstart', unlockAudio);
@@ -429,7 +431,7 @@
                 document.removeEventListener('click', unlockAudio);
                 document.removeEventListener('touchstart', unlockAudio);
             };
-        }, []); // Hanya berjalan sekali
+        }, []);
 
         useEffect(() => {
             chatNotificationSynth.current = new Tone.Synth({
@@ -456,11 +458,16 @@
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const newMessage = change.doc.data();
-                        if (newMessage.sender === 'Admin' && activeTabRef.current !== 'chat') {
-                            setHasNewMessage(true);
-                            // MODIFIKASI: Cek apakah audio sudah di-unlock
+                        // --- PERUBAHAN 1: Suara akan tetap muncul meskipun user di tab chat ---
+                        if (newMessage.sender === 'Admin') {
+                            // Tampilkan notifikasi titik merah jika tidak di tab chat
+                            if (activeTabRef.current !== 'chat') {
+                                setHasNewMessage(true);
+                            }
+                            
                             if (chatNotificationSynth.current && isAudioUnlocked.current) {
-                                chatNotificationSynth.current.triggerAttackRelease("G5", "4n");
+                                // --- PERUBAHAN 2: Nada diganti menjadi "E5" dengan durasi 0.5 detik ---
+                                chatNotificationSynth.current.triggerAttackRelease("E5", "0.5s");
                             }
                         }
                     }
@@ -1100,4 +1107,3 @@
     </script>
   </body>
 </html>
-
