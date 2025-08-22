@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kabin - Sistem Layanan Kapal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    />
+    <!-- React & Babel CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase Modular SDK (v9+) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      window.firebaseApp = { initializeApp };
+    </script>
+    <script type="module">
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signInAnonymously,
+        signInWithCustomToken,
+        setPersistence,
+        inMemoryPersistence,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      window.firebaseAuth = {
+        getAuth,
+        onAuthStateChanged,
+        signInAnonymously,
+        signInWithCustomToken,
+        setPersistence,
+        inMemoryPersistence,
+      };
+    </script>
+    <script type="module">
+      import {
+        getFirestore,
+        collection,
+        doc,
+        addDoc,
+        updateDoc,
+        onSnapshot,
+        query,
+        where,
+        orderBy,
+        serverTimestamp,
+        getDocs,
+        writeBatch,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      window.firebaseFirestore = {
+        getFirestore,
+        collection,
+        doc,
+        addDoc,
+        updateDoc,
+        onSnapshot,
+        query,
+        where,
+        orderBy,
+        serverTimestamp,
+        getDocs,
+        writeBatch,
+      };
+    </script>
+      <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      /* Dark Mode Scrollbar */
+      .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #343434; border-radius: 10px; } /* bg-gray-900 */
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 10px; } /* bg-gray-700 */
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #718096; } /* bg-gray-500 */
+      
+      .logo-white-filter {
+        filter: brightness(0) invert(1);
+      }
+    </style>
+</head>
+<body class="bg-[#2a2727] text-white">
+    <div id="root"></div>
+
+    <script type="text/javascript">
+      // --- INFORMASI KAMAR SPESIFIK ---
+      // Ubah nilai ini untuk setiap file HTML kamar yang berbeda
+      // Contoh: "KAMAR 2", "KAMAR 3", dst.
+      window.__room_name = "KAMAR 4";
+      // ------------------------------------
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDVvdwyTXNZC0cFrwrLI2oq47uvbbtTtzw",
+        authDomain: "project-moksha-a59af.firebaseapp.com",
+        projectId: "project-moksha-a59af",
+        storageBucket: "project-moksha-a59af.appspot.com",
+        messagingSenderId: "565916093642",
+        appId: "1:565916093642:web:9f3e6b03b1790e8b793833",
+        measurementId: "G-LBL8336HC6",
+      };
+      window.__firebase_config = JSON.stringify(firebaseConfig);
+      window.__app_id = firebaseConfig.appId;
+      window.__initial_auth_token = null;
+    </script>
+
+    <script type="text/babel">
+      // --- Firebase Modular Imports ---
+      const { initializeApp } = window.firebaseApp;
+      const {
+        getAuth,
+        onAuthStateChanged,
+        signInAnonymously,
+        signInWithCustomToken,
+        setPersistence,
+        inMemoryPersistence,
+      } = window.firebaseAuth;
+      const {
+        getFirestore,
+        collection,
+        doc,
+        addDoc,
+        updateDoc,
+        onSnapshot,
+        query,
+        where,
+        orderBy,
+        serverTimestamp,
+        getDocs,
+        writeBatch,
+      } = window.firebaseFirestore;
+
+      // --- React Hooks ---
+      const { useState, useEffect, createContext, useContext, useRef } = React;
+
+      // --- Contexts ---
+      const AppContext = createContext();
+      const LanguageContext = createContext();
+
+      // --- Translation System ---
+      const translations = {
+        en: {
+          welcome: "Welcome!",
+          hello: "Hello",
+          welcomeAboard: "Welcome Aboard",
+          callStaff: "Call Staff",
+          staffCalled: "Calling Staff...",
+          cancelCall: "Cancel Call",
+          menu: "Menu",
+          order: "Order", 
+          safetyAboard: "Safety",
+          chat: "Chat",
+          yourCart: "Your Cart",
+          cartIsEmpty: "Your cart is empty.",
+          total: "Total",
+          close: "Close",
+          placeOrder: "Place Order",
+          delete: "Delete",
+          addToCart: "Add to Cart",
+          chooseOptions: "Choose an Option",
+          chooseAddons: "Choose Add-ons",
+          yourOrderHistory: "Your Order History",
+          noOrdersYet: "You have no past orders.",
+          orderOn: "Order on",
+          cancelOrder: "Cancel Order",
+          confirmCancel: "Are you sure you want to cancel this order?",
+          typeYourMessage: "Type your message...",
+          send: "Send",
+          you: "You",
+          admin: "Admin",
+          itemAddedToCart: "added to cart!",
+          orderPlacedSuccessfully: "Order placed successfully!",
+          loadingHistory: "Loading history...",
+          category_Makanan: "Food",
+          category_Minuman: "Beverages",
+          category_Dessert: "Dessert",
+          category_Alcohol: "Alcohol",
+          category_Lainlain: "Others",
+          free: "Free",
+          itemsInCart: "item(s) in Cart",
+          itemNotePlaceholder: "Add a note...", 
+          status_Baru: "New",
+          status_Diproses: "Processing",
+          status_Selesai: "Completed",
+          status_Dibatalkan: "Cancelled",
+          changeLanguage: "Change Language",
+          cancel: "Cancel",
+          confirm: "Confirm",
+          confirmOrder: "Confirm Order",
+          orderSummary: "Order Summary",
+          qty: "Qty",
+          chatWithAdminTitle: "Need Assistance? We're Ready to Help!",
+          safetyTitle: "Safety & Comfort Aboard",
+          safetySubtitle: "Your Safety and Comfort Are Our Highest Priority",
+          musterDrillTitle: "Safety Briefing Information (Muster Drill)",
+          musterDrillInfo: "All guests are kindly requested to attend the safety briefing on embarkation day. You will be guided by our crew to your designated muster station.",
+          musterStation: "Your Muster Station:",
+          musterStationLocation: "Deck 2 | Forward Lounge",
+          emergencyProceduresTitle: "Emergency Procedures",
+          emergencyStep1: "Remain calm and follow crew instructions.",
+          emergencyStep2: "Life jackets are located in your stateroom closet.",
+          emergencyStep3: "Follow illuminated exit signs to your muster station.",
+          shipwideSafetyTitle: "Shipwide Safety Features",
+          shipwideFeature1: "Certified lifeboats for all guests and crew",
+          shipwideFeature2: "Continuous surveillance and onboard security",
+          shipwideFeature3: "Advanced fire suppression and smoke detection systems",
+          inStateroomSafetyTitle: "In-Stateroom Safety Essentials",
+          inStateroomFeature1: "Life vest (in closet)",
+          inStateroomFeature2: "Smoke detector and emergency lighting",
+          needAssistanceTitle: "Need Assistance?",
+          needAssistanceInfo: "For urgent assistance, call 0812 2999 0798 (Ship Emergency Line) or visit Bridge, Deck 2 - Open 24 Hours.",
+          invalidRoom: "Room information is invalid. Please scan the QR code again.",
+        },
+        id: {
+          welcome: "Selamat Datang!",
+          hello: "Halo",
+          welcomeAboard: "Selamat Datang",
+          callStaff: "Panggil Staf",
+          staffCalled: "Memanggil Staf...",
+          cancelCall: "Batalkan Panggilan",
+          menu: "Menu",
+          order: "Pesanan", 
+          safetyAboard: "Keselamatan",
+          chat: "Chat",
+          yourCart: "Keranjang Anda",
+          cartIsEmpty: "Keranjang Anda kosong.",
+          total: "Total",
+          close: "Tutup",
+          placeOrder: "Buat Pesanan",
+          delete: "Hapus",
+          addToCart: "Tambah ke Keranjang",
+          chooseOptions: "Pilih Opsi",
+          chooseAddons: "Pilih Add-ons",
+          yourOrderHistory: "Riwayat Pesanan Anda",
+          noOrdersYet: "Anda belum pernah memesan.",
+          orderOn: "Pesanan pada",
+          cancelOrder: "Batalkan Pesanan",
+          confirmCancel: "Apakah Anda yakin ingin membatalkan pesanan ini?",
+          typeYourMessage: "Ketik pesan Anda...",
+          send: "Kirim",
+          you: "Anda",
+          admin: "Admin",
+          itemAddedToCart: "ditambahkan ke keranjang!",
+          orderPlacedSuccessfully: "Pesanan berhasil dibuat!",
+          loadingHistory: "Memuat riwayat...",
+          category_Makanan: "Makanan",
+          category_Minuman: "Minuman",
+          category_Dessert: "Dessert",
+          category_Alcohol: "Alkohol",
+          category_Lainlain: "Lain-lain",
+          free: "Gratis",
+          itemsInCart: "item di Keranjang",
+          itemNotePlaceholder: "Tambah catatan...", 
+          status_Baru: "Baru",
+          status_Diproses: "Diproses",
+          status_Selesai: "Selesai",
+          status_Dibatalkan: "Dibatalkan",
+          changeLanguage: "Ubah Bahasa",
+          cancel: "Batal",
+          confirm: "Konfirmasi",
+          confirmOrder: "Konfirmasi Pesanan",
+          qty: "Jml",
+          chatWithAdminTitle: "Butuh Bantuan? Kami Siap Membantu!",
+          safetyTitle: "Keselamatan & Kenyamanan di Kapal",
+          safetySubtitle: "Keselamatan dan Kenyamanan Anda adalah Prioritas Utama Kami",
+          musterDrillTitle: "Informasi Briefing Keamanan (Muster Drill)",
+          musterDrillInfo: "Seluruh tamu diwajibkan mengikuti briefing keselamatan pada hari keberangkatan. Anda akan dipandu oleh kru kami menuju titik kumpul.",
+          musterStation: "Titik Kumpul Anda:",
+          musterStationLocation: "Deck 2 | Forward Lounge",
+          emergencyProceduresTitle: "Prosedur Keadaan Darurat",
+          emergencyStep1: "Tetap tenang dan ikuti instruksi dari kru kapal.",
+          emergencyStep2: "Jaket pelampung tersedia di lemari kamar Anda.",
+          emergencyStep3: "Ikuti tanda keluar bercahaya menuju titik kumpul Anda.",
+          shipwideSafetyTitle: "Fitur Keamanan di Seluruh Kapal",
+          shipwideFeature1: "Sekoci bersertifikat untuk seluruh tamu dan kru",
+          shipwideFeature2: "Pengawasan CCTV dan keamanan kapal 24 jam",
+          shipwideFeature3: "Sistem pemadam kebakaran dan detektor asap",
+          inStateroomSafetyTitle: "Fasilitas Keamanan di Dalam Kamar",
+          inStateroomFeature1: "Jaket pelampung (di dalam lemari)",
+          inStateroomFeature2: "Detektor asap dan lampu darurat",
+          needAssistanceTitle: "Butuh Bantuan?",
+          needAssistanceInfo: "Untuk bantuan darurat, hubungi 0812 2999 0798 (Layanan Darurat Kapal) atau kunjungi Bridge, Deck 2 - Buka 24 Jam.",
+          invalidRoom: "Informasi kamar tidak valid. Silakan pindai ulang kode QR.",
+        },
+      };
+
+      function LanguageProvider({ children }) {
+        const [language, setLanguage] = useState("en"); // Default language set to English
+        const t = (key) => translations[language][key] || key;
+        return (
+          <LanguageContext.Provider value={{ language, setLanguage, t }}>
+            {children}
+          </LanguageContext.Provider>
+        );
+      }
+
+      function useTranslation() {
+        return useContext(LanguageContext);
+      }
+
+      const FlagUK = () => ( <svg className="w-6 h-6" viewBox="0 0 60 30"><clipPath id="a"><path d="M0 0v30h60V0z"/></clipPath><path d="M0 0v30h60V0z" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" strokeWidth="6"/><path d="M0 0l60 30m0-30L0 30" clipPath="url(#a)" stroke="#C8102E" strokeWidth="4"/><path d="M30 0v30M0 15h60" stroke="#fff" strokeWidth="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" strokeWidth="6"/></svg> );
+      const FlagIndonesia = () => ( <svg className="w-6 h-6" viewBox="0 0 900 600"><path fill="#e70011" d="M0 0h900v300H0z"/><path fill="#fff" d="M0 300h900v300H0z"/></svg> );
+
+      function ConfirmationModal({ message, onConfirm, onCancel, show }) {
+        const { t } = useTranslation();
+        if (!show) return null;
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm text-center">
+              <p className="text-lg text-white mb-6">{message}</p>
+              <div className="flex justify-center space-x-4">
+                <button onClick={onCancel} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">{t("cancel")}</button>
+                <button onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">{t("confirm")}</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function App() {
+        const { t } = useTranslation();
+        const [roomData, setRoomData] = useState(null);
+        const [db, setDb] = useState(null);
+        const [loading, setLoading] = useState(true);
+        const [error, setError] = useState(null);
+
+        useEffect(() => {
+          const initialize = async () => {
+            try {
+              const config = JSON.parse(window.__firebase_config);
+              const app = initializeApp(config);
+              const auth = getAuth(app);
+              const firestore = getFirestore(app);
+              setDb(firestore);
+
+              await setPersistence(auth, inMemoryPersistence);
+              if (window.__initial_auth_token) {
+                await signInWithCustomToken(auth, window.__initial_auth_token);
+              } else {
+                await signInAnonymously(auth);
+              }
+
+              const roomName = window.__room_name;
+              if (!roomName) {
+                setError(t('invalidRoom'));
+                setLoading(false);
+                return;
+              }
+
+              const roomsRef = collection(firestore, `artifacts/${window.__app_id}/public/data/rooms`);
+              const q = query(roomsRef, where("name", "==", roomName.toUpperCase()));
+              const snapshot = await getDocs(q);
+
+              if (snapshot.empty) {
+                // Room doesn't exist, create it automatically
+                const newRoomData = {
+                  name: roomName.toUpperCase(),
+                  displayName: roomName.toUpperCase(),
+                  title: "Guest",
+                  isCalling: false,
+                };
+                const docRef = await addDoc(roomsRef, newRoomData);
+                setRoomData({ id: docRef.id, ...newRoomData });
+                document.title = `Kabin - ${newRoomData.name}`;
+              } else {
+                // Room exists, load it
+                const roomDoc = snapshot.docs[0];
+                const currentRoomData = { id: roomDoc.id, ...roomDoc.data() };
+                setRoomData(currentRoomData);
+                document.title = `Kabin - ${currentRoomData.name}`;
+              }
+            } catch (e) {
+              console.error("Initialization Error:", e);
+              setError("Failed to initialize the application.");
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          initialize();
+        }, []);
+
+        if (loading) return <div className="min-h-screen flex items-center justify-center text-white">Loading Room Information...</div>;
+        if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-900 text-red-200">{error}</div>;
+
+        return (
+          <AppContext.Provider value={{ db, appId: window.__app_id, loggedInRoom: roomData }}>
+            {roomData ? <RoomDashboard room={roomData} /> : null}
+          </AppContext.Provider>
+        );
+      }
+      
+      function RoomDashboard({ room }) {
+        const { db, appId } = useContext(AppContext);
+        const { t, language, setLanguage } = useTranslation();
+        const [isCalling, setIsCalling] = useState(room.isCalling || false);
+        const [activeTab, setActiveTab] = useState("menu"); // --- PERUBAHAN: Tab default diubah ke 'menu' ---
+        const [settingsOpen, setSettingsOpen] = useState(false);
+        const [hasNewMessage, setHasNewMessage] = useState(false);
+        const chatNotificationSynth = useRef(null);
+        const activeTabRef = useRef(activeTab);
+        const isSynthPlaying = useRef(false);
+
+        useEffect(() => {
+            activeTabRef.current = activeTab;
+        }, [activeTab]);
+        
+        const ensureAudioIsReady = async () => {
+            if (Tone.context.state !== 'running') {
+                try {
+                    await Tone.start();
+                    console.log("Audio context (re)started on user interaction.");
+                } catch (e) {
+                    console.error("Could not start audio context:", e);
+                }
+            }
+        };
+
+        useEffect(() => {
+            chatNotificationSynth.current = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 },
+            }).toDestination();
+            chatNotificationSynth.current.volume.value = -12; 
+        }, []);
+        
+        useEffect(() => {
+          const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
+          const unsubscribe = onSnapshot(roomRef, (doc) => {
+            setIsCalling(doc.data()?.isCalling || false);
+          });
+          return () => unsubscribe();
+        }, [db, room.id, appId]);
+
+        useEffect(() => {
+            if (!db || !room) return;
+            const chatsRef = collection(db, `artifacts/${appId}/public/data/chats`);
+            const q = query(chatsRef, where("roomNumber", "==", room.name));
+            
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const newMessage = change.doc.data();
+                        if (newMessage.sender === 'Admin') {
+                            if (activeTabRef.current !== 'chat') {
+                                setHasNewMessage(true);
+                            }
+                            
+                            if (chatNotificationSynth.current && !isSynthPlaying.current) {
+                                isSynthPlaying.current = true;
+                                chatNotificationSynth.current.triggerAttackRelease("E5", "0.5s");
+                                setTimeout(() => {
+                                    isSynthPlaying.current = false;
+                                }, 500); 
+                            }
+                        }
+                    }
+                });
+            });
+
+            return () => unsubscribe();
+        }, [db, appId, room]);
+
+        const handleTabClick = (tabName) => {
+            ensureAudioIsReady();
+            setActiveTab(tabName);
+            if(tabName === 'chat') {
+                setHasNewMessage(false);
+            }
+        };
+
+        const toggleCallStaff = async () => {
+          await ensureAudioIsReady();
+          const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
+          await updateDoc(roomRef, { isCalling: !isCalling });
+        };
+
+        return (
+          <div className="h-screen bg-[#2a2727] flex flex-col">
+            <header className="bg-[#2a2727] p-4 shadow-md z-20 flex-shrink-0">
+              <div className="flex justify-between items-center max-w-7xl mx-auto">
+                <div className="flex items-center space-x-4 min-w-0">
+                  <img src={"https://raw.githubusercontent.com/michaellay19/MOKSHA/main/MOKSHA%20PRADANA%20LOGO%20PRIMARY.png"} alt="Moksha Logo" className="mx-auto h-6 w-auto flex-shrink-0 logo-white-filter" />
+                      <div className="min-w-0">
+                        <h1 className="text-xl font-bold text-white truncate">
+                          {room.displayName || room.name}
+                        </h1>
+                      </div>
+                </div>
+                <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                  <button onClick={toggleCallStaff} className={`flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors shadow-md ${
+                      isCalling
+                        ? "bg-yellow-400 text-yellow-800 animate-pulse"
+                        : "bg-red-600 hover:bg-red-700 text-white"
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <span className="hidden sm:inline">{t(isCalling ? "cancelCall" : "callStaff")}</span>
+                  </button>
+                  
+                  <div className="relative">
+                    <button onClick={() => { ensureAudioIsReady(); setSettingsOpen((prev) => !prev); }} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                    {settingsOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-30">
+                        <button onClick={() => { setLanguage((lang) => lang === "id" ? "en" : "id"); setSettingsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-600 flex items-center space-x-2">
+                          {language === "id" ? <FlagUK /> : <FlagIndonesia />}
+                          <span>{t("changeLanguage")}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </header>
+            {/* --- PERUBAHAN: Urutan tombol navigasi diubah --- */}
+            <nav className="bg-red-800 shadow-sm z-10 flex-shrink-0">
+              <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
+                <button onClick={() => handleTabClick("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                  {t("menu")}
+                </button>
+                <button onClick={() => handleTabClick("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                  {t("order")}
+                </button>
+                <button onClick={() => handleTabClick("chat")} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                  {t("chat")}
+                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-red-800"></span>}
+                </button>
+                <button onClick={() => handleTabClick("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                  {t("safetyAboard")}
+                </button>
+              </div>
+            </nav>
+            <main className="flex-grow overflow-y-auto w-full">
+                  <div className="max-w-7xl mx-auto h-full">
+                      {activeTab === "chat" && <RoomChat />}
+                      {activeTab !== "chat" && (
+                          <div className="p-4 sm:p-6">
+                              {activeTab === "menu" && <OrderItems />}
+                              {activeTab === "pesanan" && <OrderHistory />}
+                              {activeTab === "keselamatan" && <SafetyInfo />}
+                          </div>
+                      )}
+                  </div>
+            </main>
+          </div>
+        );
+      }
+
+      function OrderItems() {
+        const { db, appId, loggedInRoom } = useContext(AppContext);
+        const { t } = useTranslation();
+        const [items, setItems] = useState([]);
+        const [cart, setCart] = useState([]);
+        const [showCartModal, setShowCartModal] = useState(false);
+        const [showConfirmModal, setShowConfirmModal] = useState(false);
+        const categories = ["Makanan", "Minuman", "Dessert", "Alcohol", "Lainlain"];
+
+        useEffect(() => {
+          const itemsRef = collection(db, `artifacts/${appId}/public/data/items`);
+          const q = query(itemsRef, orderBy("name"));
+          const unsubscribe = onSnapshot(q, (snapshot) => {
+            setItems(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+          });
+          return () => unsubscribe();
+        }, [db, appId]);
+
+        const addToCart = (item, selectedOption, selectedAddOns) => {
+            const cartItem = { ...item, cartId: Date.now(), selectedOption, selectedAddOns, note: "" };
+            setCart(prev => [...prev, cartItem]);
+        };
+
+        const removeFromCart = (cartId) => {
+            setCart(prev => prev.filter(item => item.cartId !== cartId));
+        };
+        
+        const handleItemNoteChange = (cartId, newNote) => {
+            setCart(prevCart => 
+                prevCart.map(item => 
+                    item.cartId === cartId ? { ...item, note: newNote } : item
+                )
+            );
+        };
+        
+        const placeOrder = async () => {
+          if (cart.length === 0) return;
+          
+          const processedItems = cart.reduce((acc, currentItem) => {
+              const optionKey = currentItem.selectedOption ? currentItem.selectedOption.name : 'no-option';
+              const addOnKey = (currentItem.selectedAddOns || []).map(a => a.name).sort().join(',');
+              const itemKey = `${currentItem.id}-${optionKey}-${addOnKey}-${currentItem.note}`;
+
+              if (acc[itemKey]) {
+                  acc[itemKey].quantity += 1;
+              } else {
+                  acc[itemKey] = { ...currentItem, quantity: 1 };
+              }
+              return acc;
+          }, {});
+
+          const finalItems = Object.values(processedItems);
+          const total = finalItems.reduce(
+            (sum, item) => sum + (item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity,
+            0
+          );
+
+          await addDoc(collection(db, `artifacts/${appId}/public/data/orders`), {
+            roomNumber: loggedInRoom.name,
+            items: finalItems,
+            total: total,
+            status: "Baru",
+            timestamp: serverTimestamp(),
+            isReadByCustomer: false,
+            isReadByAdmin: false,
+            isNew: true,
+          });
+          setCart([]);
+          setShowConfirmModal(false);
+          setShowCartModal(false);
+        };
+
+        return (
+          <div className="relative">
+            {categories.map(
+              (category) =>
+                items.filter(i => i.category === category).length > 0 && (
+                  <div key={category} className="mb-8">
+                    <h3 className="text-2xl font-bold text-white mb-4 border-b-2 border-red-800 pb-2">
+                      {t(`category_${category}`)}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {items.filter(i => i.category === category).map((item) => (
+                        <ItemCard key={item.id} item={item} onAddToCart={addToCart} />
+                      ))}
+                    </div>
+                  </div>
+                )
+            )}
+            {cart.length > 0 && (
+              <div className="fixed bottom-6 right-6 z-30">
+                <button onClick={() => setShowCartModal(true)} className="bg-green-500 hover:bg-green-600 text-white rounded-full py-3 px-5 shadow-lg flex items-center animate-pulse">
+                  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                  {cart.length} {t("itemsInCart")}
+                </button>
+              </div>
+            )}
+            {showCartModal && (
+                <CartModal 
+                    cart={cart}
+                    onClose={() => setShowCartModal(false)}
+                    onRemoveItem={removeFromCart}
+                    onItemNoteChange={handleItemNoteChange}
+                    onPlaceOrder={() => setShowConfirmModal(true)}
+                />
+            )}
+            {showConfirmModal && (
+                <OrderConfirmationModal
+                    cart={cart}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={placeOrder}
+                />
+            )}
+          </div>
+        );
+      }
+      
+      function ItemCard({ item, onAddToCart }) {
+          const { t } = useTranslation();
+          const [selectedOption, setSelectedOption] = useState(null);
+          const [selectedAddOns, setSelectedAddOns] = useState([]);
+
+          const handleOptionChange = (option) => {
+              setSelectedOption(option);
+          };
+
+          const handleAddOnToggle = (addOn) => {
+              setSelectedAddOns(prev => 
+                  prev.some(a => a.name === addOn.name)
+                      ? prev.filter(a => a.name !== addOn.name)
+                      : [...prev, addOn]
+              );
+          };
+
+          const handleAddToCart = () => {
+              onAddToCart(item, selectedOption, selectedAddOns);
+              setSelectedOption(null);
+              setSelectedAddOns([]);
+          };
+
+          return (
+              <div className="bg-[#343434] border border-gray-700 rounded-lg p-4 flex flex-col justify-between shadow-md hover:shadow-xl hover:shadow-red-800/10 hover:-translate-y-1 transition-all duration-200">
+                  <div>
+                      <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="text-xl font-semibold text-white">{item.name}</h4>
+                          <p className={`font-bold text-lg ${item.price === 0 ? "text-green-400" : "text-red-400"}`}>
+                              {item.price === 0 ? t("free") : `Rp${item.price.toLocaleString("id-ID")}`}
+                          </p>
+                      </div>
+                      <p className="text-gray-400 text-sm mb-2">{item.description}</p>
+                      
+                      {item.options && item.options.length > 0 && (
+                          <div className="mt-4 border-t border-gray-700 pt-3">
+                              <p className="font-semibold text-sm mb-2 text-gray-200">{t("chooseOptions")}:</p>
+                              {item.options.map((option) => (
+                                  <label key={option.name} className="flex items-center text-sm mb-1 text-gray-300">
+                                      <input type="radio" name={`option-${item.id}`} onChange={() => handleOptionChange(option)} checked={selectedOption?.name === option.name} className="form-radio h-4 w-4 text-red-500 bg-gray-600 border-gray-500 focus:ring-red-500"/>
+                                      <span className="ml-2">
+                                          {option.name} (+Rp{option.price.toLocaleString("id-ID")})
+                                      </span>
+                                  </label>
+                              ))}
+                          </div>
+                      )}
+
+                      {item.addOns && item.addOns.length > 0 && (
+                          <div className="mt-4 border-t border-gray-700 pt-3">
+                              <p className="font-semibold text-sm mb-2 text-gray-200">{t("chooseAddons")}:</p>
+                              {item.addOns.map((addOn) => (
+                                  <label key={addOn.name} className="flex items-center text-sm mb-1 text-gray-300">
+                                      <input type="checkbox" onChange={() => handleAddOnToggle(addOn)} checked={selectedAddOns.some(a=>a.name === addOn.name)} className="form-checkbox h-4 w-4 text-red-500 bg-gray-600 border-gray-500 rounded focus:ring-red-500"/>
+                                      <span className="ml-2">
+                                          {addOn.name} (+Rp{addOn.price.toLocaleString("id-ID")})
+                                      </span>
+                                  </label>
+                              ))}
+                          </div>
+                      )}
+                  </div>
+                  <button onClick={handleAddToCart} className="mt-4 w-full bg-red-800 text-white font-bold py-2 px-4 rounded hover:bg-red-900 transition-colors">
+                      {t("addToCart")}
+                  </button>
+              </div>
+          );
+      }
+
+      function CartModal({ cart, onClose, onRemoveItem, onItemNoteChange, onPlaceOrder }) {
+          const { t } = useTranslation();
+          const total = cart.reduce((sum, item) => sum + item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0), 0);
+
+          return (
+              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                  <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-lg">
+                      <h3 className="text-2xl font-bold mb-4 text-white">{t("yourCart")}</h3>
+                      <div className="space-y-4 mb-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                          {cart.map((item) => (
+                              <div key={item.cartId} className="border-b border-gray-700 pb-3">
+                                  <div className="flex justify-between items-start">
+                                      <div>
+                                          <p className="font-semibold text-white">{item.name}</p>
+                                          <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                            {item.selectedOption && <li>{item.selectedOption.name}</li>}
+                                            {item.selectedAddOns?.map((ao) => <li key={ao.name}>{ao.name}</li>)}
+                                          </ul>
+                                      </div>
+                                      <div className="flex items-center space-x-4">
+                                          <p className="whitespace-nowrap text-gray-300">Rp{(item.price + (item.selectedOption?.price || 0) + item.selectedAddOns.reduce((s, ao) => s + ao.price, 0)).toLocaleString("id-ID")}</p>
+                                          <button onClick={() => onRemoveItem(item.cartId)} className="text-red-500 hover:text-red-400 font-bold">{t("delete")}</button>
+                                      </div>
+                                  </div>
+                                  <input
+                                      type="text"
+                                      placeholder={t('itemNotePlaceholder')}
+                                      value={item.note}
+                                      onChange={(e) => onItemNoteChange(item.cartId, e.target.value)}
+                                      className="mt-2 w-full p-1 bg-gray-700 border border-gray-600 rounded text-sm text-white placeholder-gray-400"
+                                  />
+                              </div>
+                          ))}
+                      </div>
+                      <div className="flex justify-between font-bold text-xl mt-4 text-white">
+                          <p>{t("total")}:</p>
+                          <p>Rp{total.toLocaleString("id-ID")}</p>
+                      </div>
+                      <div className="mt-6 flex justify-end space-x-2">
+                          <button onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">{t("close")}</button>
+                          <button onClick={onPlaceOrder} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">{t("placeOrder")}</button>
+                      </div>
+                  </div>
+              </div>
+          );
+      }
+
+      function OrderConfirmationModal({ cart, onClose, onConfirm }) {
+          const { t } = useTranslation();
+          
+          const groupedItems = cart.reduce((acc, currentItem) => {
+              const optionKey = currentItem.selectedOption ? currentItem.selectedOption.name : 'no-option';
+              const addOnKey = (currentItem.selectedAddOns || []).map(a => a.name).sort().join(',');
+              const itemKey = `${currentItem.id}-${optionKey}-${addOnKey}-${currentItem.note}`;
+
+              if (acc[itemKey]) {
+                  acc[itemKey].quantity += 1;
+              } else {
+                  acc[itemKey] = { ...currentItem, quantity: 1 };
+              }
+              return acc;
+          }, {});
+
+          const finalCart = Object.values(groupedItems);
+          const total = finalCart.reduce((sum, item) => sum + (item.price + (item.selectedOption?.price || 0) + (item.selectedAddOns?.reduce((s, ao) => s + ao.price, 0) || 0)) * item.quantity, 0);
+
+          return (
+              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                  <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
+                      <h3 className="text-2xl font-bold mb-4 text-center text-white">{t("orderSummary")}</h3>
+                      <div className="space-y-3 mb-4 max-h-60 overflow-y-auto custom-scrollbar pr-2 border-t border-b border-gray-700 py-3">
+                          {finalCart.map((item, index) => (
+                              <div key={index}>
+                                  <div className="flex justify-between font-semibold text-white">
+                                      <span>{item.name} (x{item.quantity})</span>
+                                      <span>Rp{(item.price * item.quantity).toLocaleString("id-ID")}</span>
+                                  </div>
+                                  {(item.selectedOption || item.selectedAddOns.length > 0) && (
+                                    <ul className="text-xs text-gray-400 list-disc list-inside ml-2">
+                                        {item.selectedOption && (
+                                            <li className="flex justify-between">
+                                                <span>{item.selectedOption.name} (x{item.quantity})</span>
+                                                <span>+Rp{(item.selectedOption.price * item.quantity).toLocaleString("id-ID")}</span>
+                                            </li>
+                                        )}
+                                        {item.selectedAddOns.map(ao => 
+                                            <li key={ao.name} className="flex justify-between">
+                                                <span>{ao.name} (x{item.quantity})</span>
+                                                <span>+Rp{(ao.price * item.quantity).toLocaleString("id-ID")}</span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                  )}
+                                  {item.note && <p className="text-xs text-gray-400 italic mt-1">Catatan: "{item.note}"</p>}
+                              </div>
+                          ))}
+                      </div>
+                      <div className="flex justify-between font-bold text-xl mt-4 text-white">
+                          <p>{t("total")}:</p>
+                          <p>Rp{total.toLocaleString("id-ID")}</p>
+                      </div>
+                      <div className="mt-6 flex justify-around space-x-2">
+                          <button onClick={onClose} className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">{t("cancel")}</button>
+                          <button onClick={onConfirm} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">{t("confirmOrder")}</button>
+                      </div>
+                  </div>
+              </div>
+          );
+      }
+
+      function OrderHistory() {
+        const { db, appId, loggedInRoom } = useContext(AppContext);
+        const { t } = useTranslation();
+        const [orders, setOrders] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [showCancelModal, setShowCancelModal] = useState(false);
+        const [orderToCancel, setOrderToCancel] = useState(null);
+
+        useEffect(() => {
+          if (!db || !loggedInRoom) return;
+          const ordersRef = collection(db, `artifacts/${appId}/public/data/orders`);
+          const q = query(ordersRef, where("roomNumber", "==", loggedInRoom.name));
+          const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedOrders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            fetchedOrders.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+            setOrders(fetchedOrders);
+            setLoading(false);
+          });
+          return () => unsubscribe();
+        }, [db, appId, loggedInRoom]);
+
+        const confirmCancelOrder = (orderId) => {
+          setOrderToCancel(orderId);
+          setShowCancelModal(true);
+        };
+
+        const handleCancelOrder = async () => {
+          if (!orderToCancel) return;
+          const orderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderToCancel);
+          await updateDoc(orderRef, { status: "Dibatalkan", isReadByCustomer: false, isNew: false });
+          setShowCancelModal(false);
+          setOrderToCancel(null);
+        };
+
+        if (loading) return <p className="text-gray-300">{t("loadingHistory")}...</p>;
+
+        return (
+          <div className="bg-[#343434] p-6 rounded-xl shadow-lg">
+            <h2 className="text-3xl font-bold text-white mb-6">{t("yourOrderHistory")}</h2>
+            {orders.length === 0 ? (
+              <p className="text-gray-400">{t("noOrdersYet")}.</p>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <div key={order.id} className="border bg-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold text-white">
+                          {t("order")} #{order.id.substring(0, 6)}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {t("orderOn")}{" "}
+                          {order.timestamp ? new Date(order.timestamp.toDate()).toLocaleString() : '...'}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
+                          order.status === "Selesai"
+                            ? "bg-green-900 text-green-300"
+                            : order.status === "Dibatalkan"
+                            ? "bg-red-900 text-red-300"
+                            : "bg-yellow-900 text-yellow-300"
+                        }`}
+                      >
+                        {t(`status_${order.status}`)}
+                      </span>
+                    </div>
+                    <ul className="list-disc list-inside ml-4 mb-2 text-sm text-gray-300">
+                      {order.items.map((item, index) => (
+                        <li key={index}>
+                          {item.name} (x{item.quantity})
+                          {item.note && <span className="text-gray-500 text-xs italic"> - "{item.note}"</span>}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="border-t pt-2 flex justify-between items-center">
+                      <p className="font-bold text-lg text-white">
+                        {t("total")}: Rp{order.total.toLocaleString("id-ID")}
+                      </p>
+                      {(order.status === "Baru" || order.status === "Diproses") && (
+                        <button onClick={() => confirmCancelOrder(order.id)} className="bg-red-500 text-white text-xs font-bold py-1 px-3 rounded hover:bg-red-600">
+                          {t("cancelOrder")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <ConfirmationModal
+              show={showCancelModal}
+              message={t("confirmCancel")}
+              onConfirm={handleCancelOrder}
+              onCancel={() => setShowCancelModal(false)}
+            />
+          </div>
+        );
+      }
+
+      function SafetyInfo() {
+        const { t } = useTranslation();
+        return (
+            <div className="bg-[#343434] p-6 rounded-xl shadow-lg">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-white mb-2">{t('safetyTitle')}</h2>
+                    <p className="text-md text-gray-400">{t('safetySubtitle')}</p>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <h3 className="text-xl font-bold text-red-200 mb-2">{t('musterDrillTitle')}</h3>
+                        <p className="mb-3 text-red-300">{t('musterDrillInfo')}</p>
+                        <div className="bg-gray-700 p-3 rounded-lg text-center">
+                            <p className="font-semibold text-red-300">{t('musterStation')}</p>
+                            <p className="text-2xl font-bold text-red-100">{t('musterStationLocation')}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <h3 className="text-xl font-bold text-red-200 mb-3">{t('emergencyProceduresTitle')}</h3>
+                        <ul className="space-y-3 text-red-300">
+                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep1')}</span></li>
+                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep2')}</span></li>
+                            <li className="flex items-start"><span className="text-red-400 mr-3 mt-1">&#10148;</span><span>{t('emergencyStep3')}</span></li>
+                        </ul>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+                            <h3 className="text-xl font-bold text-gray-200 mb-3">{t('shipwideSafetyTitle')}</h3>
+                            <ul className="space-y-2 text-gray-300">
+                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature1')}</li>
+                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature2')}</li>
+                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('shipwideFeature3')}</li>
+                            </ul>
+                        </div>
+                        <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+                            <h3 className="text-xl font-bold text-gray-200 mb-3">{t('inStateroomSafetyTitle')}</h3>
+                            <ul className="space-y-2 text-gray-300">
+                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('inStateroomFeature1')}</li>
+                                <li className="flex items-center"><span className="text-green-400 mr-2">&#10004;</span>{t('inStateroomFeature2')}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-yellow-900/50 border-l-4 border-yellow-500 p-4 rounded-r-lg text-center">
+                        <h3 className="text-xl font-bold text-yellow-200 mb-2">{t('needAssistanceTitle')}</h3>
+                        <p className="text-yellow-300">{t('needAssistanceInfo')}</p>
+                    </div>
+                </div>
+            </div>
+        );
+      }
+
+      function RoomChat() {
+        const { db, appId, loggedInRoom } = useContext(AppContext);
+        const { t } = useTranslation();
+        const [messages, setMessages] = useState([]);
+        const [newMessage, setNewMessage] = useState("");
+        const chatContainerRef = useRef(null); 
+
+        
+        useEffect(() => {
+          if (!db || !loggedInRoom) return;
+          const chatsRef = collection(db, `artifacts/${appId}/public/data/chats`);
+          const q = query(chatsRef, where("roomNumber", "==", loggedInRoom.name));
+          const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedMessages = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            fetchedMessages.sort((a, b) => {
+              const timeA = a.timestamp ? a.timestamp.toDate() : new Date(0);
+              const timeB = b.timestamp ? b.timestamp.toDate() : new Date(0);
+              return timeA - timeB;
+            });
+            setMessages(fetchedMessages);
+          });
+          return () => unsubscribe();
+        }, [db, appId, loggedInRoom]);
+        
+        useEffect(() => {
+          if (chatContainerRef.current) {
+            const container = chatContainerRef.current;
+            container.scrollTop = container.scrollHeight;
+          }
+        }, [messages]);
+
+        const handleSendMessage = async () => {
+          if (!newMessage.trim()) return;
+          await addDoc(collection(db, `artifacts/${appId}/public/data/chats`), {
+            roomNumber: loggedInRoom.name,
+            sender: loggedInRoom.name,
+            message: newMessage.trim(),
+            timestamp: serverTimestamp(),
+            isReadByAdmin: false,
+          });
+          setNewMessage("");
+        };
+
+        return (
+          <div className="p-4 sm:p-6 h-[75vh] sm:h-full flex flex-col">
+            <div className="bg-[#343434] rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
+                <h2 className="text-xl sm:text-2xl font-bold text-white p-4 sm:p-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
+                <div ref={chatContainerRef} className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
+                      <div className={`p-3 rounded-lg max-w-[80%] sm:max-w-md ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
+                        <div className="flex items-baseline space-x-2">
+                            <p className="font-bold text-sm">{msg.sender === "Admin" ? t("admin") : t("you")}</p>
+                            <span className="text-xs opacity-75">
+                                {msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "sending..."}
+                            </span>
+                        </div>
+                        <p className="mt-1 break-words">{msg.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-4 flex flex-shrink-0 bg-[#343434] rounded-b-xl">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    className="flex-grow p-3 bg-[#4A4A4A] border border-gray-600 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400"
+                    placeholder={t("typeYourMessage")}
+                  />
+                  <button onClick={handleSendMessage} className="bg-red-800 text-white px-6 rounded-r-md hover:bg-red-900 transition-colors">
+                    {t("send")}
+                  </button>
+                </div>
+            </div>
+          </div>
+        );
+      }
+
+      const container = document.getElementById("root");
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <LanguageProvider>
+          <App />
+        </LanguageProvider>
+      );
+    </script>
+  </body>
+</html>
