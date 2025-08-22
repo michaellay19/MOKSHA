@@ -397,41 +397,27 @@
         const { db, appId } = useContext(AppContext);
         const { t, language, setLanguage } = useTranslation();
         const [isCalling, setIsCalling] = useState(room.isCalling || false);
-        const [activeTab, setActiveTab] = useState("chat");
+        const [activeTab, setActiveTab] = useState("menu"); // --- PERUBAHAN: Tab default diubah ke 'menu' ---
         const [settingsOpen, setSettingsOpen] = useState(false);
         const [hasNewMessage, setHasNewMessage] = useState(false);
         const chatNotificationSynth = useRef(null);
         const activeTabRef = useRef(activeTab);
-        const isAudioUnlocked = useRef(false); // Penanda audio
+        const isSynthPlaying = useRef(false);
 
         useEffect(() => {
             activeTabRef.current = activeTab;
         }, [activeTab]);
         
-        useEffect(() => {
-            const unlockAudio = async () => {
-                if (!isAudioUnlocked.current && Tone.context.state !== 'running') {
-                    try {
-                        await Tone.start();
-                        console.log("Audio context unlocked on first interaction.");
-                        isAudioUnlocked.current = true;
-                        
-                        document.removeEventListener('click', unlockAudio);
-                        document.removeEventListener('touchstart', unlockAudio);
-                    } catch (e) {
-                        console.error("Failed to start AudioContext:", e);
-                    }
+        const ensureAudioIsReady = async () => {
+            if (Tone.context.state !== 'running') {
+                try {
+                    await Tone.start();
+                    console.log("Audio context (re)started on user interaction.");
+                } catch (e) {
+                    console.error("Could not start audio context:", e);
                 }
-            };
-
-            document.addEventListener('click', unlockAudio);
-            document.addEventListener('touchstart', unlockAudio);
-
-            return () => {
-                document.removeEventListener('click', unlockAudio);
-                document.removeEventListener('touchstart', unlockAudio);
-            };
-        }, []);
+            }
+        };
 
         useEffect(() => {
             chatNotificationSynth.current = new Tone.Synth({
@@ -458,16 +444,17 @@
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const newMessage = change.doc.data();
-                        // --- PERUBAHAN 1: Suara akan tetap muncul meskipun user di tab chat ---
                         if (newMessage.sender === 'Admin') {
-                            // Tampilkan notifikasi titik merah jika tidak di tab chat
                             if (activeTabRef.current !== 'chat') {
                                 setHasNewMessage(true);
                             }
                             
-                            if (chatNotificationSynth.current && isAudioUnlocked.current) {
-                                // --- PERUBAHAN 2: Nada diganti menjadi "E5" dengan durasi 0.5 detik ---
+                            if (chatNotificationSynth.current && !isSynthPlaying.current) {
+                                isSynthPlaying.current = true;
                                 chatNotificationSynth.current.triggerAttackRelease("E5", "0.5s");
+                                setTimeout(() => {
+                                    isSynthPlaying.current = false;
+                                }, 500); 
                             }
                         }
                     }
@@ -478,6 +465,7 @@
         }, [db, appId, room]);
 
         const handleTabClick = (tabName) => {
+            ensureAudioIsReady();
             setActiveTab(tabName);
             if(tabName === 'chat') {
                 setHasNewMessage(false);
@@ -485,6 +473,7 @@
         };
 
         const toggleCallStaff = async () => {
+          await ensureAudioIsReady();
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
           await updateDoc(roomRef, { isCalling: !isCalling });
         };
@@ -515,7 +504,7 @@
                   </button>
                   
                   <div className="relative">
-                    <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
+                    <button onClick={() => { ensureAudioIsReady(); setSettingsOpen((prev) => !prev); }} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -533,17 +522,18 @@
                 </div>
               </div>
             </header>
+            {/* --- PERUBAHAN: Urutan tombol navigasi diubah --- */}
             <nav className="bg-red-800 shadow-sm z-10 flex-shrink-0">
               <div className="p-2 flex justify-around items-center gap-1 max-w-7xl mx-auto">
-                <button onClick={() => handleTabClick("chat")} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
-                  {t("chat")}
-                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-red-800"></span>}
-                </button>
                 <button onClick={() => handleTabClick("menu")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "menu" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
                   {t("menu")}
                 </button>
                 <button onClick={() => handleTabClick("pesanan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "pesanan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
                   {t("order")}
+                </button>
+                <button onClick={() => handleTabClick("chat")} className={`relative px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "chat" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
+                  {t("chat")}
+                  {hasNewMessage && <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-red-800"></span>}
                 </button>
                 <button onClick={() => handleTabClick("keselamatan")} className={`px-3 py-2 text-sm sm:text-base font-medium rounded-lg transition duration-200 border-b-4 ${ activeTab === "keselamatan" ? "border-white text-white" : "border-transparent text-red-200 hover:text-white" }`} >
                   {t("safetyAboard")}
