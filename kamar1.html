@@ -326,62 +326,78 @@
         const [db, setDb] = useState(null);
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState(null);
+        const [isAuthReady, setIsAuthReady] = useState(false);
 
         useEffect(() => {
-          const initialize = async () => {
-            try {
-              const config = JSON.parse(window.__firebase_config);
-              const app = initializeApp(config);
-              const auth = getAuth(app);
-              const firestore = getFirestore(app);
-              setDb(firestore);
+            const config = JSON.parse(window.__firebase_config);
+            const app = initializeApp(config);
+            const auth = getAuth(app);
+            const firestore = getFirestore(app);
+            setDb(firestore);
 
-              await setPersistence(auth, inMemoryPersistence);
-              if (window.__initial_auth_token) {
-                await signInWithCustomToken(auth, window.__initial_auth_token);
-              } else {
-                await signInAnonymously(auth);
-              }
+            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    setIsAuthReady(true);
+                } else {
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                        if (window.__initial_auth_token) {
+                            await signInWithCustomToken(auth, window.__initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        console.error("Authentication Error:", e);
+                        setError("Failed to authenticate.");
+                        setLoading(false);
+                    }
+                }
+            });
 
-              const roomName = window.__room_name;
-              if (!roomName) {
-                setError(t('invalidRoom'));
-                setLoading(false);
-                return;
-              }
-
-              const roomsRef = collection(firestore, `artifacts/${window.__app_id}/public/data/rooms`);
-              const q = query(roomsRef, where("name", "==", roomName.toUpperCase()));
-              const snapshot = await getDocs(q);
-
-              if (snapshot.empty) {
-                // Room doesn't exist, create it automatically
-                const newRoomData = {
-                  name: roomName.toUpperCase(),
-                  displayName: roomName.toUpperCase(),
-                  title: "Guest",
-                  isCalling: false,
-                };
-                const docRef = await addDoc(roomsRef, newRoomData);
-                setRoomData({ id: docRef.id, ...newRoomData });
-                document.title = `Kabin - ${newRoomData.name}`;
-              } else {
-                // Room exists, load it
-                const roomDoc = snapshot.docs[0];
-                const currentRoomData = { id: roomDoc.id, ...roomDoc.data() };
-                setRoomData(currentRoomData);
-                document.title = `Kabin - ${currentRoomData.name}`;
-              }
-            } catch (e) {
-              console.error("Initialization Error:", e);
-              setError("Failed to initialize the application.");
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          initialize();
+            return () => unsubscribe();
         }, []);
+
+        useEffect(() => {
+            if (isAuthReady && db) {
+                const fetchRoomData = async () => {
+                    try {
+                        const roomName = window.__room_name;
+                        if (!roomName) {
+                            setError(t('invalidRoom'));
+                            setLoading(false);
+                            return;
+                        }
+
+                        const roomsRef = collection(db, `artifacts/${window.__app_id}/public/data/rooms`);
+                        const q = query(roomsRef, where("name", "==", roomName.toUpperCase()));
+                        const snapshot = await getDocs(q);
+
+                        if (snapshot.empty) {
+                            const newRoomData = {
+                                name: roomName.toUpperCase(),
+                                displayName: roomName.toUpperCase(),
+                                title: "Guest",
+                                isCalling: false,
+                            };
+                            const docRef = await addDoc(roomsRef, newRoomData);
+                            setRoomData({ id: docRef.id, ...newRoomData });
+                            document.title = `Kabin - ${newRoomData.name}`;
+                        } else {
+                            const roomDoc = snapshot.docs[0];
+                            const currentRoomData = { id: roomDoc.id, ...roomDoc.data() };
+                            setRoomData(currentRoomData);
+                            document.title = `Kabin - ${currentRoomData.name}`;
+                        }
+                    } catch (e) {
+                        console.error("Firestore Error:", e);
+                        setError("Failed to load room data.");
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                fetchRoomData();
+            }
+        }, [isAuthReady, db]);
 
         if (loading) return <div className="min-h-screen flex items-center justify-center text-white">Loading Room Information...</div>;
         if (error) return <div className="min-h-screen flex items-center justify-center p-4 bg-red-900 text-red-200">{error}</div>;
@@ -408,20 +424,35 @@
             activeTabRef.current = activeTab;
         }, [activeTab]);
         
+        const initAudio = async () => {
+            if (!isAudioReady.current && Tone.context.state !== 'running') {
+                await Tone.start();
+                isAudioReady.current = true;
+                console.log("Audio context started!");
+            }
+        };
+
         useEffect(() => {
+            const handleFirstInteraction = () => {
+                initAudio();
+                window.removeEventListener('mousedown', handleFirstInteraction);
+                window.removeEventListener('touchstart', handleFirstInteraction);
+            };
+
+            window.addEventListener('mousedown', handleFirstInteraction);
+            window.addEventListener('touchstart', handleFirstInteraction);
+
             chatNotificationSynth.current = new Tone.Synth({
                 oscillator: { type: "sine" },
                 envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 },
             }).toDestination();
             chatNotificationSynth.current.volume.value = -12; 
+
+            return () => {
+                window.removeEventListener('mousedown', handleFirstInteraction);
+                window.removeEventListener('touchstart', handleFirstInteraction);
+            };
         }, []);
-        
-        const initAudio = async () => {
-            if (!isAudioReady.current && Tone.context.state !== 'running') {
-                await Tone.start();
-                isAudioReady.current = true;
-            }
-        };
         
         useEffect(() => {
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
@@ -453,8 +484,18 @@
             return () => unsubscribe();
         }, [db, appId, room]);
 
+        useEffect(() => {
+            if (activeTab === 'chat') {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+            return () => {
+                document.body.style.overflow = 'auto'; // Cleanup on unmount
+            };
+        }, [activeTab]);
+
         const handleTabClick = (tabName) => {
-            initAudio();
             setActiveTab(tabName);
             if(tabName === 'chat') {
                 setHasNewMessage(false);
@@ -462,7 +503,6 @@
         };
 
         const toggleCallStaff = async () => {
-          await initAudio();
           const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, room.id);
           await updateDoc(roomRef, { isCalling: !isCalling });
         };
@@ -493,7 +533,7 @@
                   </button>
                   
                   <div className="relative">
-                    <button onClick={() => { initAudio(); setSettingsOpen((prev) => !prev); }} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
+                    <button onClick={() => setSettingsOpen((prev) => !prev)} className="p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -528,7 +568,7 @@
                 </button>
               </div>
             </nav>
-            <main className="flex-grow overflow-y-auto w-full">
+            <main className="flex-grow w-full overflow-y-auto">
                 <div className="max-w-7xl mx-auto h-full">
                     {activeTab === "chat" && <RoomChat />}
                     {activeTab !== "chat" && (
@@ -1000,9 +1040,8 @@
         const { t } = useTranslation();
         const [messages, setMessages] = useState([]);
         const [newMessage, setNewMessage] = useState("");
-        const chatContainerRef = useRef(null); // <-- TAMBAHKAN INI
+        const messagesEndRef = useRef(null);
 
-        
         useEffect(() => {
           if (!db || !loggedInRoom) return;
           const chatsRef = collection(db, `artifacts/${appId}/public/data/chats`);
@@ -1018,12 +1057,9 @@
           });
           return () => unsubscribe();
         }, [db, appId, loggedInRoom]);
-        
+
         useEffect(() => {
-          if (chatContainerRef.current) {
-            const container = chatContainerRef.current;
-            container.scrollTop = container.scrollHeight;
-          }
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, [messages]);
 
         const handleSendMessage = async () => {
@@ -1039,10 +1075,10 @@
         };
 
         return (
-          <div className="p-4 sm:p-6 h-[75vh] sm:h-full flex flex-col">
+          <div className="p-4 sm:p-6 h-full flex flex-col">
             <div className="bg-[#343434] rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
                 <h2 className="text-xl sm:text-2xl font-bold text-white p-4 sm:p-6 flex-shrink-0">{t("chatWithAdminTitle")}</h2>
-                <div ref={chatContainerRef} className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
+                <div className="flex-grow overflow-y-auto border-t border-b border-gray-700 p-4 bg-[#2d2d2d] custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex mb-3 ${ msg.sender === "Admin" ? "justify-start" : "justify-end" }`}>
                       <div className={`p-3 rounded-lg max-w-[80%] sm:max-w-md ${ msg.sender === "Admin" ? "bg-gray-600 text-white" : "bg-red-800 text-white" }`}>
@@ -1056,6 +1092,7 @@
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
                 <div className="p-4 flex flex-shrink-0 bg-[#343434] rounded-b-xl">
                   <input
