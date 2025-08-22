@@ -608,7 +608,7 @@
             </svg>
         );
 
-        function MainMenu({ setActiveTab, counts }) {
+        function MainMenu({ setActiveTab, counts, onInteraction }) {
             const { t } = useTranslation();
 
             const menuItems = [
@@ -657,7 +657,10 @@
                     {menuItems.map((item) => (
                         <button
                             key={item.id}
-                            onClick={() => setActiveTab(item.id)}
+                            onClick={() => {
+                                onInteraction();
+                                setActiveTab(item.id);
+                            }}
                             className="relative bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transform transition-all duration-300 flex flex-col items-center justify-center aspect-square"
                         >
                             {item.count > 0 && (
@@ -708,7 +711,6 @@
             const newOrderLoop = useRef(null);
             const prevUnreadCount = useRef(0);
 
-            // --- PERUBAHAN: Fungsi untuk memastikan audio siap ---
             const ensureAudioIsReady = async () => {
                 if (Tone.context.state !== 'running') {
                     try {
@@ -1121,6 +1123,7 @@
                                     orders: newOrdersCount,
                                     chats: unreadChatRooms.size,
                                 }}
+                                onInteraction={ensureAudioIsReady}
                             />
                         )}
                         {activeTab === "panggilan" && (
@@ -2224,14 +2227,13 @@
             const [messages, setMessages] = useState([]);
             const [selectedRoom, setSelectedRoom] = useState(null);
             const [newMessage, setNewMessage] = useState("");
-            const [allRooms, setAllRooms] = useState([]); // --- PERUBAHAN: State untuk semua kamar ---
+            const [allRooms, setAllRooms] = useState([]);
             const messagesEndRef = useRef(null);
             const [showClearModal, setShowClearModal] = useState(false);
 
             useEffect(() => {
                 if (!db) return;
                 
-                // --- PERUBAHAN: Ambil semua kamar dari koleksi 'rooms' ---
                 const roomsRef = db.collection(`artifacts/${appId}/public/data/rooms`).orderBy("name");
                 const unsubRooms = roomsRef.onSnapshot((snapshot) => {
                     const fetchedRooms = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2241,7 +2243,7 @@
                 const chatsRef = db.collection(
                     `artifacts/${appId}/public/data/chats`
                 );
-                const q = chatsRef; // No orderBy to avoid index
+                const q = chatsRef;
                 const unsubChats = q.onSnapshot((snapshot) => {
                     const allMessages = snapshot.docs.map((d) => ({
                         id: d.id,
@@ -2317,7 +2319,6 @@
                             {t("messagesFromRoom")}
                         </h3>
                         <ul className="overflow-y-auto">
-                            {/* --- PERUBAHAN: Gunakan 'allRooms' untuk menampilkan daftar kamar --- */}
                             {allRooms.map((room) => (
                                 <li key={room.id}>
                                     <button
